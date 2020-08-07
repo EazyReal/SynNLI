@@ -1,13 +1,19 @@
-# GNN source
+# GNN source v0
+
+## Alert
+- I have stopped developing this src folder
+- plz refer to another folder for the newest results
+- the way to reproduce the result in this folder is in the next section
+
+
+## Execution
+- follow the last sections in testbed.ipynb
+- it contains training and testing code
 
 ## notebooks
 - GNL_play : play ground
 - SynNLI-data.ipynb : stage1 code for data preprocessing and data visualization(text2graph) developmemnt
 - testbed.ipynb: stage2 code for batch model and training code development (GraphData, collate by follow_batch, model, and trainer)
-
-### todo notebooks
-- stage 3 to do, for cleaning code
-- stage 4 for experimenting
 
 ## src orginization
 - main.py: todo, the execution code
@@ -17,8 +23,6 @@
 - data.py : dataset definition
 - train.py : for training code
 - dunmped_code: previous versions of useful functions
-
-## under development
 
 ## todo
 - change label view style code to real batch code
