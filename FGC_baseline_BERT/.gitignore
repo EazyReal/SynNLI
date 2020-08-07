@@ -1,0 +1,5 @@
+# Ignoring directories
+# Both the directory itself and its contents will be ignored.
+FGC_baseline_BERT/FGC_release_1.7.13/
+FGC_release_1.7.13/
+data/
