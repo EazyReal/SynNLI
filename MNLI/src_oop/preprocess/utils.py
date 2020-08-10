@@ -20,7 +20,7 @@ from torch_geometric.data import DataLoader
 ## model
 import stanza
 from stanza.models.common.doc import Document
-from stanza.pipeline.core import Pipeline
+
 ## self
 import config
 import utils
