@@ -157,8 +157,8 @@ class SynNLI_Model(nn.Module):
         else:
             self.embedding = nn.Embedding(config.GLOVE_VOCAB_SIZE, config.GLOVE_DIMENSION)
         # bi-lstm for contextualized embedding and for local comp
-        self.bilstm_emd = nn.LSTM(input_size=d, hidden_size=d*2, num_layers=2, bidirectional=True, batch_first=True, dropout=0)
-        self.bilstm_cmp = nn.LSTM(input_size=d, hidden_size=d*2, num_layers=2, bidirectional=True, batch_first=True, dropout=0)
+        #self.bilstm_emd = nn.LSTM(input_size=d, hidden_size=d*2, num_layers=2, bidirectional=True, batch_first=True, dropout=0)
+        #self.bilstm_cmp = nn.LSTM(input_size=d, hidden_size=d*2, num_layers=2, bidirectional=True, batch_first=True, dropout=0)
         # encoder
         if self.config.encoder == None:
             self.encoder = None

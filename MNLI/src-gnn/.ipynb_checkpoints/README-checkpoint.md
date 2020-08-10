@@ -1,12 +1,17 @@
 # GNN source v0
 
-## Alert
-- I have stopped developing this src folder
-- plz refer to another folder for the newest results
-- the way to reproduce the result in this folder is in the next section
+## Overview
+- the src folder (src-gnn) is no longer updating (too dirty and cannot use BERT as base embedding easily)
+- the way to reproduce the result in this folder is in the next sections
+- refer to src_oop for new model in allennlp style
 
+## Usage 
 
-## Execution
+### Trained Model Probing
+- follow the execution will do
+- probing.ipynb
+
+### Training from scratch
 - follow the last sections in testbed.ipynb
 - it contains training and testing code
 
@@ -14,6 +19,7 @@
 - GNL_play : play ground
 - SynNLI-data.ipynb : stage1 code for data preprocessing and data visualization(text2graph) developmemnt
 - testbed.ipynb: stage2 code for batch model and training code development (GraphData, collate by follow_batch, model, and trainer)
+- probing.ipynb: loading and probing/evaluating trained model
 
 ## src orginization
 - main.py: todo, the execution code
