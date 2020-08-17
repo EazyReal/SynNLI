@@ -39,7 +39,7 @@ h = config.hf
 l = config.lf
 
 
-def draw(data, node_size=1000, font_size=12, save_img_file=None):
+def draw(data : Data, node_size=1000, font_size=12, save_img_file=None):
     """
     input: (torch_geometric.data.data.Data, path or string)
     effect: show and save graph data, with graphviz layout visualization
@@ -61,9 +61,13 @@ def draw(data, node_size=1000, font_size=12, save_img_file=None):
     return
 
 ######################################################################################################
-# if direct use Stanza dependencies parser without sentence segmentation (it will do it directly)    #
+# high level    #
 ######################################################################################################
 def text2graph(text: str, parser: Union[Pipeline, BiaffineDependencyParserPredictor], parser_name: str) -> Data:
+    """
+    args: text, parser, parser_name(allen or Stanza)
+    ouput: pytorch geometric data
+    """
     assert(parser_name in ["allennlp", "Stanza"])
     if parser_name == "allennlp":
         return doc2graph_allennlp(parser.predict(sentence=text))
@@ -74,6 +78,10 @@ def text2graph(text: str, parser: Union[Pipeline, BiaffineDependencyParserPredic
         return None
         
 def doc2graph(doc:  Union[Document, List, Dict], parser_name: str) -> Data:
+    """
+    args: doc 
+    ouput: pytorch geometric data
+    """
     assert(parser_name in ["allennlp", "Stanza"])
     if parser_name == "allennlp":
         return doc2graph_allennlp(doc)
@@ -96,7 +104,6 @@ def text2graph_stanza(text : str, nlp : Pipeline):
     
 def doc2graph_stanza(doc : Union[Document, List]) -> Data:
     """
-    2020/8/4 18:30
     input Stanza Document : doc
     output PytorchGeoData : G
     G = {
