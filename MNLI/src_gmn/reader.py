@@ -1,6 +1,10 @@
 import config
 import utils
 
+#import os, sys; sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+#from src_gmn.sparse_adjacency_field import SparseAdjacencyField
+from sparse_adjacency_field import SparseAdjacencyField
+
 import itertools
 from typing import Iterable, List, Dict, Tuple, Union
 import json
