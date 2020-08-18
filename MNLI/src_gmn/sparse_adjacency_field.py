@@ -1,16 +1,22 @@
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set, Tuple, Union, TypeVar
 import logging
 import textwrap
 
+from collections import defaultdict
 from overrides import overrides
 import torch
 
 from allennlp.common.checks import ConfigurationError
-from allennlp.data.fields.field import Field, TextField
-from allennlp.data.fields.sequence_field import SequenceField
+from allennlp.data.fields import (Field, TextField, SequenceField)
+#from allennlp.data.fields.sequence_field import SequenceField
 from allennlp.data.vocabulary import Vocabulary
 
 from torch_geometric.data.data import Data as PyGeoData
+from torch_geometric.data.batch import Batch as PyGeoBatch
+
+DataArray = TypeVar(
+    "DataArray", torch.Tensor, Dict[str, torch.Tensor], Dict[str, Dict[str, torch.Tensor]]
+)
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +51,7 @@ class SparseAdjacencyField(Field[torch.Tensor]):
         "labels",
         "sequence_field",
         "_label_namespace",
-        "_padding_value",
+        #"_padding_value",
         "_indexed_labels",
     ]
 
@@ -61,8 +67,10 @@ class SparseAdjacencyField(Field[torch.Tensor]):
         sequence_field: SequenceField,
         label_namespace: str = "labels"
     ) -> None:
-        labels = graph.edge_attr : Union[List[str], List[int]] # label can skip indexing
-        self.indices = graph.edge_index : torch.tensor
+        # label skip index is not implemented yet, todo
+        labels: Union[List[str], List[int]] = graph.edge_attr
+        indices: torch.tensor = graph.edge_index
+        self.indices = indices # cannot use : torch.tensor here, wierd
         self.labels = labels
         self.sequence_field = sequence_field
         self._label_namespace = label_namespace
@@ -77,7 +85,7 @@ class SparseAdjacencyField(Field[torch.Tensor]):
         
         # check for out-of-index edge
         if not all(
-            0 <= index[1] < field_length and 0 <= index[0] < field_length for index in indices
+            0 <= indices[1][i] < field_length and 0 <= indices[0][i] < field_length for i in range(indices.size()[1])
         ):
             raise ConfigurationError(
                 f"Label indices and sequence length "
@@ -85,7 +93,7 @@ class SparseAdjacencyField(Field[torch.Tensor]):
             )
         
         # if labels is passed, should have same length with edges 
-        if labels is not None and len(indices) != len(labels):
+        if labels is not None and indices.size()[1] != len(labels):
             raise ConfigurationError(
                 f"Labelled indices were passed, but their lengths do not match: "
                 f" {labels}, {indices}"
@@ -115,30 +123,65 @@ class SparseAdjacencyField(Field[torch.Tensor]):
             self._indexed_labels = [
                 vocab.get_token_index(label, self._label_namespace) for label in self.labels
             ]
-
+    
     @overrides
     def get_padding_lengths(self) -> Dict[str, int]:
-        return {"num_tokens": self.sequence_field.sequence_length()}
-
+        """
+        If there are things in this field that need padding, note them here. 
+        In order to pad a batch of instance, we get all of the lengths from the batch, take the max, and pad
+        everything to that length (or use a pre-specified maximum length).
+        The return value is a dictionary mapping keys to lengths, like `{'num_tokens': 13}`.
+        This is always called after :func:`index`.
+        """
+        return {"num_tokens": len(self.sequence_field)}
+    
+    # this is the main difference between Sparse and Dense Adjacency
     @overrides
     def as_tensor(self, padding_lengths: Dict[str, int]) -> torch.Tensor:
-        desired_num_tokens = padding_lengths["num_tokens"]
-        tensor = torch.ones(desired_num_tokens, desired_num_tokens) * self._padding_value
-        labels = self._indexed_labels or [1 for _ in range(len(self.indices))]
-
-        for index, label in zip(self.indices, labels):
-            tensor[index] = label
-        return tensor
+        tensor_dict = {}
+        tensor_dict["edge_attr"] = torch.tensor(self._indexed_labels, dtype=torch.long)
+        tensor_dict["edge_index"] = self.indices
+        tensor_dict["batch_id"] = torch.zeros(len(self.sequence_field)) # batch_id for the node_attr
+        return tensor_dict
+    
+    # use pytorch geometric sparse graph batching style
+    # I looked up the references for coding this part
+    # https://pytorch-geometric.readthedocs.io/en/latest/_modules/torch_geometric/data/batch.html#Batch.from_data_list
+    # https://github.com/allenai/allennlp/blob/master/allennlp/data/fields/text_field.py
+    @overrides 
+    def batch_tensors(self, tensor_list: List[DataArray]) -> DataArray:  # type: ignore
+        """
+        Takes the output of `Field.as_tensor()` from a list of `Instances` and merges it into
+        one batched tensor for this `Field`. 
+        
+        Input: List[TensorDict]
+        Output: TensorDict
+        """
+        pre_sum = 0
+        batch_tensor = defaultdict(list)
+        
+        for batch_id, tensor in enumerate(tensor_list):
+            cur_edge_index = tensor["edge_index"].add(pre_sum)
+            cur_nodes = len(tensor["batch_id"])
+            batch_tensor["edge_index"].append(cur_edge_index)
+            batch_tensor["edge_attr"].append(tensor["edge_attr"])
+            cur_id_tensor = torch.full(size=[cur_nodes], fill_value=batch_id, dtype=torch.long) # as a 1*d tensor
+            batch_tensor["batch_id"].append(cur_id_tensor)
+            pre_sum += cur_nodes
+        batch_tensor["edge_index"] = torch.cat(batch_tensor["edge_index"], dim=1)
+        batch_tensor["edge_attr"] = torch.cat(batch_tensor["edge_attr"], dim=0)
+        batch_tensor["batch_id"] = torch.cat(batch_tensor["batch_id"], dim=0)
+        return dict(batch_tensor)
 
     @overrides
-    def empty_field(self) -> "AdjacencyField":
+    def empty_field(self) -> "SparseAdjacencyField":
 
         # The empty_list here is needed for mypy
         empty_list: List[Tuple[int, int]] = []
-        adjacency_field = AdjacencyField(
-            empty_list, self.sequence_field.empty_field(), padding_value=self._padding_value
+        empty_adjacency_field = SparseAdjacencyField(
+            PyGeoData(), self.sequence_field.empty_field()
         )
-        return adjacency_field
+        return empty_adjacency_field
 
     def __str__(self) -> str:
         length = self.sequence_field.sequence_length()
