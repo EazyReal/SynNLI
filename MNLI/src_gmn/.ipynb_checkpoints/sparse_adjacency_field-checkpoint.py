@@ -20,6 +20,8 @@ DataArray = TypeVar(
 
 logger = logging.getLogger(__name__)
 
+# for input model
+SparseAdjacencyFieldTensors = Dict[str, torch.Tensor]
 
 # author = ytlin 
 class SparseAdjacencyField(Field[torch.Tensor]):
@@ -38,22 +40,22 @@ class SparseAdjacencyField(Field[torch.Tensor]):
         edge_index is a [2, |V|] tensor
         # can be a way to implement this w/o using PyGeoData
     sequence_field: `SequenceField`
-        we do not construct sequencefield from node_attr, since need tokenizer 
+        I do not construct sequencefield from node_attr, since need tokenizer 
     label_namespace : `str`, optional (default=`'labels'`)
         The namespace to use for converting tag strings into integers.  We convert tag strings to
         integers for you, and this parameter tells the `Vocabulary` object which mapping from
         strings to integers to use (so that "O" as a tag doesn't get the same id as "O" as a word).
-    # we do not need padding here, may need follow_batch (but in this implementation, we treat node_attr to follow_batch)
+    #  do not need padding here, may need follow_batch (but in this implementation, we treat node_attr to follow_batch)
+    
     """
-
-    __slots__ = [
-        "indices",
+    __slots__ = (
+        "edge_indices",
         "labels",
         "sequence_field",
         "_label_namespace",
-        #"_padding_value",
         "_indexed_labels",
-    ]
+    )
+    
 
     # It is possible that users want to use this field with a namespace which uses OOV/PAD tokens.
     # This warning will be repeated for every instantiation of this class (i.e for every data
@@ -65,12 +67,12 @@ class SparseAdjacencyField(Field[torch.Tensor]):
         self,
         graph: PyGeoData,
         sequence_field: SequenceField,
-        label_namespace: str = "labels"
+        label_namespace: str = "edge_labels"
     ) -> None:
+        # Field inheritor dose not need to super().__init__() 
         # label skip index is not implemented yet, todo
         labels: Union[List[str], List[int]] = graph.edge_attr
-        indices: torch.tensor = graph.edge_index
-        self.indices = indices # cannot use : torch.tensor here, wierd
+        self.edge_indices = graph.edge_index
         self.labels = labels
         self.sequence_field = sequence_field
         self._label_namespace = label_namespace
@@ -80,24 +82,25 @@ class SparseAdjacencyField(Field[torch.Tensor]):
         field_length = sequence_field.sequence_length()
         
         # we do not check duplicate edge, since edge can be multi label
-        #if len(set(indices)) != len(indices):
-        #    raise ConfigurationError(f"Indices must be unique, but found {indices}")
+        #if len(set(edge_indices)) != len(edge_indices):
+        #    raise ConfigurationError(f"edge_indices must be unique, but found {edge_indices}")
         
-        # check for out-of-index edge
-        if not all(
-            0 <= indices[1][i] < field_length and 0 <= indices[0][i] < field_length for i in range(indices.size()[1])
-        ):
-            raise ConfigurationError(
-                f"Label indices and sequence length "
-                f"are incompatible: {indices} and {field_length}"
-            )
-        
-        # if labels is passed, should have same length with edges 
-        if labels is not None and indices.size()[1] != len(labels):
-            raise ConfigurationError(
-                f"Labelled indices were passed, but their lengths do not match: "
-                f" {labels}, {indices}"
-            )
+        if self.edge_indices is not None: # do not check for empty_field
+            # check for out-of-index edge
+            if not all(
+                0 <= self.edge_indices[1][i] < field_length and 0 <= self.edge_indices[0][i] < field_length for i in range(self.edge_indices.size()[1])
+            ):
+                raise ConfigurationError(
+                    f"Label edge_indices and sequence length "
+                    f"are incompatible: {self.edge_indices} and {field_length}"
+                )
+
+            # if labels is passed, should have same length with edges 
+            if labels is not None and self.edge_indices.size()[1] != len(labels):
+                raise ConfigurationError(
+                    f"Labelled edge_indices were passed, but their lengths do not match: "
+                    f" {labels}, {self.edge_indices}"
+                )
 
     def _maybe_warn_for_namespace(self, label_namespace: str) -> None:
         if not (self._label_namespace.endswith("labels") or self._label_namespace.endswith("tags")):
@@ -140,7 +143,7 @@ class SparseAdjacencyField(Field[torch.Tensor]):
     def as_tensor(self, padding_lengths: Dict[str, int]) -> torch.Tensor:
         tensor_dict = {}
         tensor_dict["edge_attr"] = torch.tensor(self._indexed_labels, dtype=torch.long)
-        tensor_dict["edge_index"] = self.indices
+        tensor_dict["edge_index"] = self.edge_indices
         tensor_dict["batch_id"] = torch.zeros(len(self.sequence_field)) # batch_id for the node_attr
         return tensor_dict
     
@@ -172,14 +175,14 @@ class SparseAdjacencyField(Field[torch.Tensor]):
         batch_tensor["edge_attr"] = torch.cat(batch_tensor["edge_attr"], dim=0)
         batch_tensor["batch_id"] = torch.cat(batch_tensor["batch_id"], dim=0)
         return dict(batch_tensor)
-
+    
+    # tested that can build, not know whats for, may be errors in downstream
     @overrides
     def empty_field(self) -> "SparseAdjacencyField":
 
         # The empty_list here is needed for mypy
-        empty_list: List[Tuple[int, int]] = []
         empty_adjacency_field = SparseAdjacencyField(
-            PyGeoData(), self.sequence_field.empty_field()
+            graph=PyGeoData(), sequence_field=self.sequence_field.empty_field()
         )
         return empty_adjacency_field
 
@@ -188,12 +191,12 @@ class SparseAdjacencyField(Field[torch.Tensor]):
         formatted_labels = "".join(
             "\t\t" + labels + "\n" for labels in textwrap.wrap(repr(self.labels), 100)
         )
-        formatted_indices = "".join(
-            "\t\t" + index + "\n" for index in textwrap.wrap(repr(self.indices), 100)
+        formatted_edge_indices = "".join(
+            "\t\t" + index + "\n" for index in textwrap.wrap(repr(self.edge_indices), 100)
         )
         return (
             f"AdjacencyField of length {length}\n"
-            f"\t\twith indices:\n {formatted_indices}\n"
+            f"\t\twith edge_indices:\n {formatted_edge_indices}\n"
             f"\t\tand labels:\n {formatted_labels} \t\tin namespace: '{self._label_namespace}'."
         )
 

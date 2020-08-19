@@ -107,7 +107,7 @@ def doc2graph(doc : Union[Document, List]) -> Data:
             id2 = prev_token_sum + int(dep[2].to_dict()["id"])
             e[0].append(id1)
             e[1].append(id2)
-            edge_info.append((id1, id2, dep[1]))
+            edge_info.append(dep[1])
         prev_token_sum += len(sent.tokens)+1
         # add links between sentence roots
         if(cur_root_id != 0):
@@ -115,7 +115,7 @@ def doc2graph(doc : Union[Document, List]) -> Data:
             id2 = cur_root_id
             e[0].append(id1)
             e[1].append(id2)
-            edge_info.append((id1, id2, "bridge"))
+            edge_info.append("bridge")
         prev_root_id = cur_root_id
     # id to embeddings
     # x = torch.tensor([ for token in node_attr])

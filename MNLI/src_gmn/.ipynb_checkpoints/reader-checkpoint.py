@@ -117,30 +117,18 @@ class NLI_Graph_Reader(DatasetReader):
             #hypothesis_tokens = self._wordpiece_tokenizer.add_special_tokens(g_h.node_attr)
             fields["tokens_p"] = TextField(tokens_p, self._token_indexers)
             fields["tokens_h"] = TextField(tokens_h, self._token_indexers)
-            #fields["edge_p"] = AdjacencyField(g_p.edge_index)
-            #fields["edge_h"] = AdjacencyField(g_h.edge_index)
-            # consider use label field to get vocab
-            #fields["edge_type_p"] = LabelField(g_p.edge_attr)
-            #fields["edge_type_h"] = LabelField(g_h.edge_attr)
-            # trying AjacencyField
-            p_e_index = list(zip(g_p.edge_index[0], g_p.edge_index[1]))
-            h_e_index = list(zip(g_h.edge_index[0], g_h.edge_index[1]))
-            p_e_attr = [lab[2] for lab in g_p.edge_attr]
-            h_e_attr = [lab[2] for lab in g_h.edge_attr]
-            fields["edge_p"] = AdjacencyField(indices=p_e_index,
-                                              sequence_field=TextField(tokens_p, self._token_indexers),
-                                              labels=p_e_attr,
-                                              label_namespace = "edge_labels",
-                                              padding_value = -1 
-                                             )
-            fields["edge_h"] = AdjacencyField(indices=h_e_index,
-                                              sequence_field=TextField(tokens_h, self._token_indexers),
-                                              labels=h_e_attr,
-                                              label_namespace = "edge_labels",
-                                              padding_value = -1 
-                                             )
-            
-        if label is not None: # care do not use if label for label can be 0(in int)
-            fields["label"] = LabelField(label, skip_indexing=True) # already turn to index when preprocessing
+            fields["g_p"] = SparseAdjacencyField(graph=g_p,
+                                                 sequence_field=fields["tokens_p"],
+                                                 label_namespace = "edge_labels"
+                                                )
+            fields["g_h"] = SparseAdjacencyField(graph=g_h,
+                                                 sequence_field=fields["tokens_h"],
+                                                 label_namespace = "edge_labels"
+                                                )
+        
+        # care do not use `if label` for label can be 0(in int)
+        if label is not None:
+            # already turn to index when preprocessing
+            fields["label"] = LabelField(label, skip_indexing=True)
 
         return Instance(fields)
