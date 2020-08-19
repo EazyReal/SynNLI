@@ -94,4 +94,5 @@ class GraphMatchingNetwork(Registrable):
 
 @GraphMatchingNetwork.register("gmn")
 class GMN(GraphMatchingNetwork):
+    pass
     

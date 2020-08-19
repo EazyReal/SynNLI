@@ -20,7 +20,16 @@ from allennlp.training.metrics import CategoricalAccuracy
 #self import 
 import config
 from sparse_adjacency_field import SparseAdjacencyField, SparseAdjacencyFieldTensors
+from gmn import GraphMatchingNetwork
 
+# defualt choice for model embedding, can use config file later
+transformer_embedder = PretrainedTransformerMismatchedEmbedder(
+    model_name=config.TRANSFORMER_NAME,
+    max_length=None, # concat if over max len (512 for BERT base)
+    train_parameters=True,
+    #last_layer_only=True, unsupported? why
+    #gradient_checkpointing=None
+)
 
 #@Model.register("syn_nli")
 class SynNLIModel(Model):
@@ -37,7 +46,7 @@ class SynNLIModel(Model):
         """
         super().__init__(vocab)
         num_labels = vocab.get_vocab_size("labels")
-        self.embedder = embedder or PretrainedTransformerMismatchedEmbedder(model_name=config.TRANSFORMER_NAME)
+        self.embedder = embedder or transformer_embedder
         self.gmn = gmn
         self.classifier = torch.nn.Linear(gmn.get_output_dim(), num_labels)
         self.accuracy = CategoricalAccuracy()
