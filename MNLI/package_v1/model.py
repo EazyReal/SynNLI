@@ -42,7 +42,7 @@ class SynNLIModel(Model):
                  vocab: Vocabulary,
                  embedder: TokenEmbedder,
                  pooler: Seq2VecEncoder
-                 #gmn: GraphPair2VecEncoder,
+                 #gmn: GraphMatchingNetwork,
                 ):
         """
         vocab : for edge_labels mainly
@@ -91,8 +91,8 @@ class SynNLIModel(Model):
         dense_h = tensor_op.sparse2dense(**sparse_h)
         # Shape: (batch_size, classifier_in_dim)
         # cls_vector = self.gmn(sparse_p, sparse_h, g_p, g_h)
-        pool_p = self.pooler(**dense_p)
-        pool_h = self.pooler(**dense_h)
+        pool_p = self.pooler(dense_p["data"], dense_p["mask"])
+        pool_h = self.pooler(dense_p["data"], dense_p["mask"])
         #print(pool_p.size())
         cls_vector = (pool_p+pool_h)/2
         #print(cls_vector.size())

@@ -66,6 +66,8 @@ label_to_id = {
     "neutral" : 1,
     "entailment" : 2,
 }
+id_to_label = ["contradiction", "neutral", "entailment"]
+
 h_field = "sentence2"
 p_field = "sentence1"
 label_field = "gold_label"

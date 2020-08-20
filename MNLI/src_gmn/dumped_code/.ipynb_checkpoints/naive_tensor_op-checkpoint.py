@@ -104,4 +104,17 @@ def sparse2dense(data, batch_indices):
     true_tensor = torch.Tensor([True]*indices.size()[1]).to(device=device)
     out = torch.sparse.FloatTensor(indices, data).to_dense()
     mask = torch.sparse.LongTensor(indices, true_tensor).to_dense().to(dtype=bool)
+    print(mask)
     return {"data": out, "mask": mask}
+
+"""
+implementation with self made tensor raise error 
+Inplace Op on (Requirs_Grad + Leaf) Tensor
+    # mask = torch.full([b, n], False, dtype=bool)
+    # out = torch.zeros([b, n, d], dtype=data.dtype, device=data.device, requires_grad=data.requires_grad)
+    # out = torch.zeros([b, n, d], dtype=data.dtype, device=data.device)
+    # for i, index in enumerate(indices):
+    #     tid = tuple(index)
+    #     out[tid] = data[i]
+    #     mask[tid] = True
+"""

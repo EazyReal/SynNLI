@@ -1,3 +1,6 @@
+# to be solved "[ROOT]" is not special for transformer
+# can use "[SEP]" ?, since we are not using [SEP], and [SEP] is not meaningful itself without "type_id"?
+ 
 import config
 import utils
 
@@ -32,8 +35,8 @@ from stanza.pipeline.core import Pipeline
 logger = logging.getLogger(__name__)
 
 
-# comment for development step
-# @DatasetReader.register("nli-graph")
+# comment if in development step for ipython notebook import
+@DatasetReader.register("nli-graph")
 class NLI_Graph_Reader(DatasetReader):
     """
     Reads a file from a preprocessed NLI ataset.
@@ -78,7 +81,10 @@ class NLI_Graph_Reader(DatasetReader):
                 example for example in example_iter if example["gold_label"] != "-"
             )
             for example in filtered_example_iter:
+                # we want label to be in string here, use vocab to label
                 label = example["gold_label"]
+                if(isinstance(label, int)):
+                    label = config.id_to_label[label]
                 premise : List = example["sentence1"]
                 hypothesis : List = example["sentence2"]
                 yield self.graph_to_instance(premise, hypothesis, label)
@@ -128,7 +134,6 @@ class NLI_Graph_Reader(DatasetReader):
         
         # care do not use `if label` for label can be 0(in int)
         if label is not None:
-            # already turn to index when preprocessing
-            fields["label"] = LabelField(label, skip_indexing=True)
+            fields["label"] = LabelField(label, skip_indexing=False, label_namespace="labels")
 
         return Instance(fields)
