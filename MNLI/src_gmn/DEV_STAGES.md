@@ -55,6 +55,7 @@
         - inplace operation
         - tensor properties
         - torch.sparse.Tensor.to_dense() as tf.scatter_nd
+    - 2020/8/21, can actually use pytorch_scatter, pytorch_sparse...
 - allennlp train can work with my modules
     
     
