@@ -39,7 +39,7 @@ def dense2sparse(data: torch.Tensor, mask: torch.Tensor) -> Dict[str, torch.Tens
     tensor([0, 1, 1, 2, 2, 2, 2])
     """
     b, n, d = data.size()
-    indices = mask.nonzero()
+    indices = mask.nonzero(as_tuple=False)
     batch_ids = indices.T[0]
     out = torch.stack([data[tuple(idx)] for idx in indices])
     return {"data": out, "batch_indices": batch_ids}
