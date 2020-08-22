@@ -29,38 +29,67 @@ from torch_geometric.data.data import Data as PyGeoData
 from torch_geometric.data import DataLoader
 ## Stanza
 import stanza
-from stanza.models.common.doc import Document
-from stanza.pipeline.core import Pipeline
+from stanza.models.common.doc import Document as StanzaDocument
+from stanza.pipeline.core import Pipeline as StanzaPipeline
 
 logger = logging.getLogger(__name__)
 
+
+"""
+combined input field are not supported yet
+"""
+
+# alias and for changing, on for in(raw), one for saved(parsed)
+# not used yet
+i_p_field = "sentence1"
+i_h_field = "sentence2"
+i_l_field = "gold_label"
+o_p_field = "sentence1"
+o_h_field = "sentence2"
+o_l_field = "gold_label"
+i_fields = [i_p_field, i_h_field, i_l_field]
+o_fields = [o_p_field, o_h_field, o_l_field]
 
 # comment if in development step for ipython notebook import
 @DatasetReader.register("nli-graph")
 class NLI_Graph_Reader(DatasetReader):
     """
-    Reads a file from a preprocessed NLI ataset.
+    Reads a file from a preprocessed/raw NLI ataset.
+    the input type can be determined by __init__ parameter
     This data is formatted as jsonl, one json-formatted instance per line.
-    The keys in the data are in config.
+    {
+        "gold_label": {0: contradiction, 1: neutral, 2: entailment} or RawLabel
+        "sentence1": StanzaDoc in List form or RawText
+        "sentence2": StanzaDoc in List form or RawText
+    }
     along with a metadata field containing the tokenized strings of the premise and hypothesis.
     Registered as a `DatasetReader` with name "nli-graph".
     
-    # Parameters
-    parser: 
-    token_indexers : `Dict[str, TokenIndexer]`, optional (default=`{"tokens": PretrainedTransformerMismatchedIndexer()}`)
-    combine_input_fields : encode P and H at the same time with [CLS]P[SEP]H?
-    Note: if want to use BERT like NLI method, see original reader on github "allennlp-models/esim..."
+    # Parameter:
+        wordpiece_tokenizer: Tokenizer, optional (default=`{"tokens": PretrainedTransformerTokenizer(config.TRANSFORMER_NAME)}`)
+            tokenize token into smaller pieces
+        token_indexers : `Dict[str, TokenIndexer]`, optional (default=`{"tokens": PretrainedTransformerMismatchedIndexer(config.TRANSFORMER_NAME)}`)
+            index token
+        combine_input_fields : `bool`, optional(default=False)
+            whether to encode P and H at the same time with [CLS]P[SEP]H[SEP]
+            Note: if want to use BERT like NLI method, see original reader on github "allennlp-models/esim..."
+        input_parsed: `bool`, optional (default=`True`)
+            if the input is rawtext or parsed stanza doc
+        parser: `StanzaPipeline`, optional
+            if input_parsed is provided False, provide parser
     
-    # Notes
-    We do not need to tokenize, input is already tokenized when using Stanza Pipeneline
-    However, to get index, we need token_indexer! (note that "[ROOT]" will be unkown...)
+    # Caveat:
+        "[ROOT]" is not special token should be fixed
+        combined_input_field is not implemented yet
     """
 
     def __init__(
         self,
         wordpiece_tokenizer: Tokenizer = None,
         token_indexers: Dict[str, TokenIndexer] = None,
-        combine_input_fields : bool = None,
+        combine_input_fields: bool = None,
+        input_parsed: bool = None,
+        parser: StanzaPipeline = None,
         **kwargs,
     ) -> None:
         #super().__init__(manual_distributed_sharding=True, **kwargs)
@@ -68,32 +97,61 @@ class NLI_Graph_Reader(DatasetReader):
         self._wordpiece_tokenizer = wordpiece_tokenizer or PretrainedTransformerTokenizer(config.TRANSFORMER_NAME)
         self._token_indexers = token_indexers or {"tokens": PretrainedTransformerMismatchedIndexer(config.TRANSFORMER_NAME)}
         self._combine_input_fields = combine_input_fields or False
+        self._input_parsed = input_parsed or True
+        self._parser = parser or None
 
     @overrides
     def _read(self, file_path: str):
-        # if `file_path` is a URL, redirect to the cache
-        file_path = cached_path(file_path)
-
-        with open(file_path, "r") as fo:
-            example_iter = (json.loads(line) for line in fo)
-            # we need gold label
-            filtered_example_iter = (
-                example for example in example_iter if example["gold_label"] != "-"
-            )
-            for example in filtered_example_iter:
-                # we want label to be in string here, use vocab to label
-                label = example["gold_label"]
-                if(isinstance(label, int)):
-                    label = config.id_to_label[label]
-                premise : List = example["sentence1"]
-                hypothesis : List = example["sentence2"]
-                yield self.graph_to_instance(premise, hypothesis, label)
+        """
+            To be added
+            Dumped:
+                if is url, than cached
+                file_path = cached_path(file_path)
+        """
+        if self._input_parsed:
+            with open(file_path, "r") as fo:
+                example_iter = (json.loads(line) for line in fo)
+                # we need gold label
+                filtered_example_iter = (
+                    example for example in example_iter if example["gold_label"] != "-"
+                )
+                for example in filtered_example_iter:
+                    # we want label to be in string here, use vocab to label
+                    label = example["gold_label"]
+                    if(isinstance(label, int)):
+                        label = config.id_to_label[label]
+                    premise : Union[StanzaDoc, List] = example["sentence1"]
+                    hypothesis :  Union[StanzaDoc, List] = example["sentence2"]
+                    yield self.graph_to_instance(premise, hypothesis, label)
+                    
+        elif save_file_path is not None:
+            with open(file_path, "r") as fo:
+                    example_iter = (json.loads(line) for line in fo)
+                    # we need gold label
+                    filtered_example_iter = (
+                        example for example in example_iter if example["gold_label"] != "-"
+                    )
+                    for example in filtered_example_iter:
+                        # we want label to be in string here, use vocab to label
+                        label = example["gold_label"]
+                        if(isinstance(label, int)):
+                            label = config.id_to_label[label]
+                        premise : str = example["sentence1"]
+                        hypothesis : str = example["sentence2"]
+                        premise : StanzaDoc = self._parser(premise)
+                        hypothesis : StanzaDoc = self._parser(hypothesis)
+                        instance_dict = {
+                            "sentence",
+                        }
+                        
+                        yield self.graph_to_instance(**instance_dict)
+            
 
     def graph_to_instance(
         self, 
-        premise: List,
-        hypothesis: List,
-        label: int = None,
+        premise: Union[StanzaDoc, List],
+        hypothesis: Union[StanzaDoc, List],
+        gold_label: Union[int, str]= None,
     ) -> Instance:
         """
         input: premise/hypothesis as List of Graph Infromation
@@ -103,8 +161,6 @@ class NLI_Graph_Reader(DatasetReader):
         node_attr : word tokens 
         edge_attr : edge labels
         edge_index : sparse edge
-        
-        ## tokenize intra_word_tokenize
         """
 
         fields: Dict[str, Field] = {}
@@ -121,7 +177,7 @@ class NLI_Graph_Reader(DatasetReader):
         else:
             #premise_tokens = self._wordpiece_tokenizer.add_special_tokens(g_p.node_attr)
             #hypothesis_tokens = self._wordpiece_tokenizer.add_special_tokens(g_h.node_attr)
-            fields["tokens_p"] = TextField(tokens_p, self._token_indexers)
+            fields["tokens_p"] = TextField(tokens_p, self._token_indexers) # defualt = {tokens: tokens}?
             fields["tokens_h"] = TextField(tokens_h, self._token_indexers)
             fields["g_p"] = SparseAdjacencyField(graph=g_p,
                                                  sequence_field=fields["tokens_p"],
@@ -133,7 +189,7 @@ class NLI_Graph_Reader(DatasetReader):
                                                 )
         
         # care do not use `if label` for label can be 0(in int)
-        if label is not None:
-            fields["label"] = LabelField(label, skip_indexing=False, label_namespace="labels")
+        if gold_label is not None:
+            fields["label"] = LabelField(gold_label, skip_indexing=False, label_namespace="labels")
 
         return Instance(fields)

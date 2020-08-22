@@ -5,6 +5,7 @@
 local bert_model = "bert-base-uncased";
 local train_data_path = "./data/MNLI_Stanza/pre_multinli_1.0_dev_matched.jsonl";
 local validation_data_path = "./data/MNLI_Stanza/pre_multinli_1.0_dev_mismatched.jsonl";
+local cache_data_dir = "./data/MNLI_instance_cache";
 local BATCH_SIZE = 32;
 local EPOCH = 10;
 
@@ -14,7 +15,17 @@ local EPOCH = 10;
         "wordpiece_tokenizer": {
             "type" : "pretrained_transformer",
             "model_name" : bert_model
-        }
+        },
+        "token_indexers" : {
+             "tokens": {
+                 // need "indexer" ?
+                 "type": "pretrained_transformer_mismatched",
+                 "model_name" : bert_model,
+             }
+        },
+        "max_instances" : 10, // to exp, simply use 10 here
+        "cache_directory": cache_data_dir,
+        "lazy": null,
     },
     "train_data_path": train_data_path,
     "validation_data_path": validation_data_path,
@@ -22,7 +33,11 @@ local EPOCH = 10;
         "type": "simple_model",
         "embedder": {
             "type": "pretrained_transformer_mismatched",
-            "model_name" : bert_model
+            "model_name" : bert_model,
+            "max_length" : null, //use cut and concat 
+            "train_parameters" : true,
+            "last_layer_only" : true, 
+            "gradient_checkpointing" : null //study 
         },
         "pooler": {
             "type": "boe", //bag_of_embeddings

@@ -25,16 +25,9 @@ import config
 from sparse_adjacency_field import SparseAdjacencyField, SparseAdjacencyFieldTensors
 #from gmn import GraphMatchingNetwork
 import tensor_op # for batch transform
+from graph_pair_to_vec_encoder import GraphPair2VecEncoder
 
 # defualt choice for model embedding, can use config file later
-transformer_embedder = PretrainedTransformerMismatchedEmbedder(
-    model_name=config.TRANSFORMER_NAME,
-    max_length=None, # concat if over max len (512 for BERT base)
-    train_parameters=True,
-    #last_layer_only=True, unsupported? why
-    #gradient_checkpointing=None
-)
-
 
 @Model.register("simple_model")
 class SynNLIModel(Model):
@@ -42,7 +35,7 @@ class SynNLIModel(Model):
                  vocab: Vocabulary,
                  embedder: TokenEmbedder,
                  pooler: Seq2VecEncoder
-                 #gmn: GraphMatchingNetwork,
+                 gmn: GraphPair2VecEncoder,
                 ):
         """
         vocab : for edge_labels mainly
@@ -52,11 +45,9 @@ class SynNLIModel(Model):
         """
         super().__init__(vocab)
         num_labels = vocab.get_vocab_size("labels") #3
-        self.embedder = embedder or transformer_embedder
-        #self.gmn = gmn
-        #self.classifier = torch.nn.Linear(gmn.get_output_dim(), num_labels)
-        self.pooler = pooler or BagOfEmbeddingsEncoder(768, averaged=True)
-        self.classifier = torch.nn.Linear(768, num_labels)
+        self.embedder = embedder 
+        self.gmn = gmn
+        self.classifier = torch.nn.Linear(gmn.get_output_dim(), num_labels)
         self.accuracy = CategoricalAccuracy()
         return
         
@@ -84,18 +75,10 @@ class SynNLIModel(Model):
         # Shape:
         # node_attr : (num_tokens, embedding_dim)
         # batch_id : (num_tokens)
-        # inside or outside GMN?
         sparse_p = tensor_op.dense2sparse(embedded_p, tokens_p["tokens"]["mask"])
         sparse_h = tensor_op.dense2sparse(embedded_h, tokens_h["tokens"]["mask"])
-        dense_p = tensor_op.sparse2dense(**sparse_p)
-        dense_h = tensor_op.sparse2dense(**sparse_h)
         # Shape: (batch_size, classifier_in_dim)
-        # cls_vector = self.gmn(sparse_p, sparse_h, g_p, g_h)
-        pool_p = self.pooler(dense_p["data"], dense_p["mask"])
-        pool_h = self.pooler(dense_p["data"], dense_p["mask"])
-        #print(pool_p.size())
-        cls_vector = (pool_p+pool_h)/2
-        #print(cls_vector.size())
+        cls_vector = self.gmn(sparse_p, sparse_h, g_p, g_h)
         # Shape: (batch_size, num_labels)
         logits = self.classifier(cls_vector)
         # Shape: (batch_size, num_labels)

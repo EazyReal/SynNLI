@@ -17,3 +17,5 @@ pip install torch-geometric
 
 # pytorch related
 pip install torch==${TORCH}+${CUDA} torchvision==${TORCH_VISION}+${CUDA} -f https://download.pytorch.org/whl/torch_stable.html
+
+# stanza to be added

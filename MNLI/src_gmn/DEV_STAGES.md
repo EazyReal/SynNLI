@@ -57,6 +57,7 @@
         - torch.sparse.Tensor.to_dense() as tf.scatter_nd
     - 2020/8/21, can actually use pytorch_scatter, pytorch_sparse...
 - allennlp train can work with my modules
+- advanced training with tensorboard, optimizer, shedelur settings by looking at source
     
     
 # (Now) State 3 - Train A HGNN model (het graph embedding w/o interaction)
