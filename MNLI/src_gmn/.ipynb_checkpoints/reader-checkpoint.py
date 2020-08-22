@@ -1,7 +1,7 @@
 # to be solved "[ROOT]" is not special for transformer
 # can use "[SEP]" ?, since we are not using [SEP], and [SEP] is not meaningful itself without "type_id"?
  
-import config
+import reader_config as config
 import utils
 
 #import os, sys; sys.path.append(os.path.dirname(os.path.realpath(__file__)))
@@ -29,30 +29,22 @@ from torch_geometric.data.data import Data as PyGeoData
 from torch_geometric.data import DataLoader
 ## Stanza
 import stanza
-from stanza.models.common.doc import Document as StanzaDocument
+from stanza.models.common.doc import Document as StanzaDoc
 from stanza.pipeline.core import Pipeline as StanzaPipeline
 
 logger = logging.getLogger(__name__)
 
 
 """
-combined input field are not supported yet
+Caveat:
+    the file is current dependent on reader_config.py
+    "[ROOT]" is not special token should be fixed
+    combined_input_field is not implemented yet
 """
 
-# alias and for changing, on for in(raw), one for saved(parsed)
-# not used yet
-i_p_field = "sentence1"
-i_h_field = "sentence2"
-i_l_field = "gold_label"
-o_p_field = "sentence1"
-o_h_field = "sentence2"
-o_l_field = "gold_label"
-i_fields = [i_p_field, i_h_field, i_l_field]
-o_fields = [o_p_field, o_h_field, o_l_field]
-
 # comment if in development step for ipython notebook import
-@DatasetReader.register("nli-graph")
-class NLI_Graph_Reader(DatasetReader):
+# @DatasetReader.register("nli-graph")
+class NLIGraphReader(DatasetReader):
     """
     Reads a file from a preprocessed/raw NLI ataset.
     the input type can be determined by __init__ parameter
@@ -75,10 +67,27 @@ class NLI_Graph_Reader(DatasetReader):
             Note: if want to use BERT like NLI method, see original reader on github "allennlp-models/esim..."
         input_parsed: `bool`, optional (default=`True`)
             if the input is rawtext or parsed stanza doc
+            if not, the parsing part is in text2instance function
+            and the cache option for readsetreader should be open(cache_dir)
         parser: `StanzaPipeline`, optional
             if input_parsed is provided False, provide parser
+        cache_directory : `str`, optional (default=`None`)
+            this is a param for parent class `DatasetReader`
+            from  `https://github.com/allenai/allennlp/blob/master/allennlp/data/dataset_readers/dataset_reader.py`
+            If given, we will use this directory to store a cache of already-processed `Instances` in
+            every file passed to :func:`read`, serialized (by default, though you can override this) as
+            one string-formatted `Instance` per line.  If the cache file for a given `file_path` exists,
+            we read the `Instances` from the cache instead of re-processing the data (using
+            :func:`_instances_from_cache_file`).  If the cache file does _not_ exist, we will _create_
+            it on our first pass through the data (using :func:`_instances_to_cache_file`).
+            !!! NOTE
+                It is the _caller's_ responsibility to make sure that this directory is
+                unique for any combination of code and parameters that you use.  That is, if you pass a
+                directory here, we will use any existing cache files in that directory _regardless of the
+                parameters you set for this DatasetReader!_
     
     # Caveat:
+        the file is current dependent on reader_config.py
         "[ROOT]" is not special token should be fixed
         combined_input_field is not implemented yet
     """
@@ -90,6 +99,7 @@ class NLI_Graph_Reader(DatasetReader):
         combine_input_fields: bool = None,
         input_parsed: bool = None,
         parser: StanzaPipeline = None,
+        input_fields: List = None,
         **kwargs,
     ) -> None:
         #super().__init__(manual_distributed_sharding=True, **kwargs)
@@ -99,58 +109,37 @@ class NLI_Graph_Reader(DatasetReader):
         self._combine_input_fields = combine_input_fields or False
         self._input_parsed = input_parsed or True
         self._parser = parser or None
+        self.f = input_fields or config.default_fields
 
     @overrides
     def _read(self, file_path: str):
         """
-            To be added
-            Dumped:
-                if is url, than cached
-                file_path = cached_path(file_path)
+        Reads a file, yield instances
+        can take raw or parsed depends on __init__ param (input_parsed)
+        the parsing part is in text2instance function
+        besure to open cache in config file to store instance if using raw text to speed up coming experiments 
         """
-        if self._input_parsed:
-            with open(file_path, "r") as fo:
-                example_iter = (json.loads(line) for line in fo)
-                # we need gold label
-                filtered_example_iter = (
-                    example for example in example_iter if example["gold_label"] != "-"
-                )
-                for example in filtered_example_iter:
-                    # we want label to be in string here, use vocab to label
-                    label = example["gold_label"]
-                    if(isinstance(label, int)):
-                        label = config.id_to_label[label]
-                    premise : Union[StanzaDoc, List] = example["sentence1"]
-                    hypothesis :  Union[StanzaDoc, List] = example["sentence2"]
-                    yield self.graph_to_instance(premise, hypothesis, label)
-                    
-        elif save_file_path is not None:
-            with open(file_path, "r") as fo:
-                    example_iter = (json.loads(line) for line in fo)
-                    # we need gold label
-                    filtered_example_iter = (
-                        example for example in example_iter if example["gold_label"] != "-"
-                    )
-                    for example in filtered_example_iter:
-                        # we want label to be in string here, use vocab to label
-                        label = example["gold_label"]
-                        if(isinstance(label, int)):
-                            label = config.id_to_label[label]
-                        premise : str = example["sentence1"]
-                        hypothesis : str = example["sentence2"]
-                        premise : StanzaDoc = self._parser(premise)
-                        hypothesis : StanzaDoc = self._parser(hypothesis)
-                        instance_dict = {
-                            "sentence",
-                        }
-                        
-                        yield self.graph_to_instance(**instance_dict)
+        file_path = cached_path(file_path)
+        with open(file_path, "r") as fo:
+            example_iter = (json.loads(line) for line in fo)
+            # we need gold label
+            filtered_example_iter = (
+                example for example in example_iter if example[self.f[2]] != "-"
+            )
+            for example in filtered_example_iter:
+                # we want label to be in string here, use vocab to label
+                label = example[self.f[2]]
+                if(isinstance(label, int)):
+                    label = config.id_to_label[label]
+                premise : Union[StanzaDoc, List, str] = example[self.f[0]]
+                hypothesis :  Union[StanzaDoc, List, str] = example[self.f[1]]
+                yield self.text_to_instance(premise, hypothesis, label)
             
-
-    def graph_to_instance(
+    @overrides
+    def text_to_instance(
         self, 
-        premise: Union[StanzaDoc, List],
-        hypothesis: Union[StanzaDoc, List],
+        premise: Union[StanzaDoc, List, str],
+        hypothesis: Union[StanzaDoc, List, str],
         gold_label: Union[int, str]= None,
     ) -> Instance:
         """
@@ -164,7 +153,10 @@ class NLI_Graph_Reader(DatasetReader):
         """
 
         fields: Dict[str, Field] = {}
-            
+        
+        if not self._input_parsed:
+            premise : StanzaDoc = self._parser(premise)
+            hypothesis : StanzaDoc = self._parser(hypothesis)
         g_p: PyGeoData = utils.doc2graph(premise)
         g_h: PyGeoData = utils.doc2graph(hypothesis)
         tokens_p: List[Token] = [Token(w) for w in  g_p.node_attr]
