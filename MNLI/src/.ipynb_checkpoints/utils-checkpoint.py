@@ -38,6 +38,9 @@ p = config.pf
 h = config.hf
 l = config.lf
 
+# root_token
+root_token = "$"
+
 def g2sent(g : PytorchGeoData):
     return " ".join(g.node_attr)
 
@@ -49,7 +52,7 @@ def draw(data : PytorchGeoData, node_size=1000, font_size=12, save_img_file=None
     G = to_networkx(data)
     pos = nx.nx_pydot.graphviz_layout(G)
     if(data.edge_attr != None):
-        edge_labels = {(u,v):lab for u,v,lab in data.edge_attr}
+        edge_labels = {(u.item(),v.item()):lab for u,v,lab in zip(data.edge_index[0], data.edge_index[1], data.edge_attr)}
     if(data.node_attr != None):
         node_labels = dict(zip(G.nodes, data.node_attr))
     nx.draw(G, pos=pos, nodecolor='r', edge_color='b', node_size=node_size, with_labels=False)
@@ -57,7 +60,7 @@ def draw(data : PytorchGeoData, node_size=1000, font_size=12, save_img_file=None
     nx.draw_networkx_edge_labels(G, pos=pos, edge_labels=edge_labels, font_size=font_size)
     print(G.nodes)
     print(G.edges)
-    if save_img_file != None:
+    if save_img_file is not  None:
         plt.savefig(save_img_file)
     plt.show()
     return
@@ -75,14 +78,17 @@ def text2graph(text : str, nlp : StanzaPipeline):
     
 def doc2graph(doc : Union[StanzaDocument, List]) -> PytorchGeoData:
     """
-    input Stanza Document : doc
-    output PytorchGeoData : G
-    G = {
-     x: id tensor
-     edge_idx : edges size = (2, l-1)
-     edge_attr: (u, v, edge_type in str)
-     node_attr: text, with extra special tokens
-    }
+    input:
+        doc : Union[StanzaDocument, List]
+        selected_features : List[str] (this is to be added)
+    output:
+        PytorchGeoData : G
+        G = {
+         x: id tensor
+         edge_idx : edges size = (2, l-1)
+         edge_attr: (u, v, edge_type in str)
+         node_attr: text, with extra special tokens
+        }
     """
     if isinstance(doc, list): #convert to Doc first if is in dict form ([[dict]])
         doc = StanzaDocument(doc)
@@ -111,7 +117,7 @@ def doc2graph(doc : Union[StanzaDocument, List]) -> PytorchGeoData:
     for idx, sent in enumerate(doc.sentences):
         # node info by index(add root at the beginning of every sentence)
         cur_root_id = len(node_info)
-        node_info.append("[ROOT]")
+        node_info.append(root_token)
         for token in sent.tokens:
             node_info.append(token.to_dict()[0]['text'])
         # edge info by index of u in edge (u,v)
@@ -159,7 +165,7 @@ def doc2graph_allennlp(doc: Dict) -> PytorchGeoData:
     n = len(doc["words"])
     e = [list(range(1, n+1)),doc["predicted_heads"]]
     edge_attr = list(zip(e[0], e[1], doc["predicted_dependencies"]))
-    node_attr = ["[ROOT]"]
+    node_attr = [root_token]
     node_attr.extend(doc["words"])
     x = torch.tensor(list(range(n)))
     e = torch.tensor(e)

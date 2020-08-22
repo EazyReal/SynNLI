@@ -34,8 +34,7 @@ class SynNLIModel(Model):
     def __init__(self,
                  vocab: Vocabulary,
                  embedder: TokenEmbedder,
-                 pooler: Seq2VecEncoder
-                 gmn: GraphPair2VecEncoder,
+                 graph_pair2vec_encoder: GraphPair2VecEncoder,
                 ):
         """
         vocab : for edge_labels mainly
@@ -46,7 +45,7 @@ class SynNLIModel(Model):
         super().__init__(vocab)
         num_labels = vocab.get_vocab_size("labels") #3
         self.embedder = embedder 
-        self.gmn = gmn
+        self.graph_pair2vec_encoder = graph_pair2vec_encoder
         self.classifier = torch.nn.Linear(gmn.get_output_dim(), num_labels)
         self.accuracy = CategoricalAccuracy()
         return
@@ -78,7 +77,7 @@ class SynNLIModel(Model):
         sparse_p = tensor_op.dense2sparse(embedded_p, tokens_p["tokens"]["mask"])
         sparse_h = tensor_op.dense2sparse(embedded_h, tokens_h["tokens"]["mask"])
         # Shape: (batch_size, classifier_in_dim)
-        cls_vector = self.gmn(sparse_p, sparse_h, g_p, g_h)
+        cls_vector = self.graph_pair2vec_encoder(sparse_p, sparse_h, g_p, g_h)
         # Shape: (batch_size, num_labels)
         logits = self.classifier(cls_vector)
         # Shape: (batch_size, num_labels)

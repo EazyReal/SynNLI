@@ -12,6 +12,8 @@ local cache_data_dir = data_root + "/MNLI_instance_cache";
 local BATCH_SIZE = 32;
 local EPOCH = 10;
 
+// care vocabulary of edge labels, this is related to model
+
 {
     "dataset_reader" : {
         "type": "nli-graph",
@@ -26,12 +28,28 @@ local EPOCH = 10;
                  "model_name" : bert_model,
              }
         },
+        "input_parsed" : true, //use parsed data
+        "input_fields" : null, //use default
         "max_instances" : 10, // to exp, simply use 10 here
         "cache_directory": cache_data_dir,
         "lazy": null,
     },
     "train_data_path": train_data_path,
     "validation_data_path": validation_data_path,
+    "vocabulary": {
+        "type": "from_instances",
+        "min_count": {
+            "edge_labels": 1000,
+        },
+        "max_vocab_size": {
+            "edge_labels": 20,
+        },
+        "non_padded_namespaces": ["*tags", "labels"] // want edge OOV embedding/weights
+        //type: "from_files",
+        //directory: "/some/dir/",   
+        //oov_token: "[UNK]",  
+        //padding_token: "[PAD]",
+    },
     "model": {
         "type": "simple_model",
         "embedder": {

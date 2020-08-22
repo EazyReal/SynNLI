@@ -1,7 +1,13 @@
 from allennlp.common import Registrable
 from overrides import overrides
+from torch_geometric.nn import GATConv, RGCNConv, CGConv
 
-
+convs = {
+    "gat" : GATConv(in_channels=, out_channels=, heads=1),
+    "gcn" : ,
+    "ggcn" : ,
+    "cgc" : ,
+}
 
 class GraphPair2VecEncoder(Registrable):
     """
@@ -39,19 +45,28 @@ class GraphConvolutionLayer(Registrable):
     """
     pass
         
+    
+    
 @GraphPair2VecEncoder.register("graph_embedding_net")
 class GraphEmbeddingNet(GraphPair2VecEncoder):
     __slots__ = (
         "input_dim",
         "output_dim",
     )
-    def __init__(self, input_dim: int, output_dim: int, gconv : GraphConvolutionLayer, **kwargs):
+    def __init__(self, 
+                 input_dim: int,
+                 output_dim: int,
+                 conv_type : str,
+                 **kwargs):
         self.input_dim = input_dim
         self.output_dim = output_dim
-        
+        if conv_type not in convs.keys():
+            raise ConvNameNotSupportedError
+        self.conv = convs[conv_type]
         return 
-    def forward:
-        pass
+    
+    def forward():
+        return 
     
     def get_input_dim(self) -> int:
         return self.input_dim
