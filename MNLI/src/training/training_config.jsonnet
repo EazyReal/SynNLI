@@ -12,6 +12,13 @@ local cache_data_dir = data_root + "/MNLI_instance_cache";
 local BATCH_SIZE = 32;
 local EPOCH = 10;
 
+local input_fields = ["sentence1", "sentence2", "gold_label"];
+local num_edge_labels = 20;
+
+local dim_embedder = 768;
+local dim_encoder = 300;
+local num_labels = 3;
+
 // care vocabulary of edge labels, this is related to model
 
 {
@@ -29,7 +36,7 @@ local EPOCH = 10;
              }
         },
         "input_parsed" : true, //use parsed data
-        "input_fields" : null, //use default
+        "input_fields" : input_fields, //use default
         "max_instances" : 10, // to exp, simply use 10 here
         "cache_directory": cache_data_dir,
         "lazy": null,
@@ -42,16 +49,14 @@ local EPOCH = 10;
             "edge_labels": 1000,
         },
         "max_vocab_size": {
-            "edge_labels": 20,
+            "edge_labels": num_edge_labels,
         },
-        "non_padded_namespaces": ["*tags", "labels"] // want edge OOV embedding/weights
-        //type: "from_files",
-        //directory: "/some/dir/",   
-        //oov_token: "[UNK]",  
-        //padding_token: "[PAD]",
+        "non_padded_namespaces": ["labels"] // default = ["**labels", "**tags"]
+        "oov_token": "[UNK]",  
+        "padding_token": "[PAD]",
     },
     "model": {
-        "type": "simple_model",
+        "type": "graph-nli",
         "embedder": {
             "type": "pretrained_transformer_mismatched",
             "model_name" : bert_model,
@@ -60,10 +65,30 @@ local EPOCH = 10;
             "last_layer_only" : true, 
             "gradient_checkpointing" : null //study 
         },
-        "pooler": {
-            "type": "boe", //bag_of_embeddings
-            "embedding_dim": 768
-        }
+        "projector": {
+            "input_dim": dim_embedder,
+            "num_layers": 1,
+            "hidden_dims": dim_encoder,
+            "activations": {
+                "type": "leaky_relu",
+                "negative_slope": 0.2
+            }, 
+            "dropout": 0.1,
+        },
+        "encoder": { //this is of type GraphPair2VecEncoder
+            "type": "rgcn",
+            "dim": dim_encoder,
+        },
+        "classifier": {
+            "input_dim": 4*dim_ecoder,
+            "num_layers": 1,
+            "hidden_dims": num_labels,
+            "activations": {
+                "type": "leaky_relu",
+                "negative_slope": 0.2
+            }, 
+            "dropout": 0.1,
+        },
     },
     "data_loader": {
         "batch_size": BATCH_SIZE,

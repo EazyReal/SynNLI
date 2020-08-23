@@ -13,12 +13,14 @@ from allennlp.data.fields.text_field import TextFieldTensors
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 from allennlp.data.tokenizers import Token, Tokenizer, WhitespaceTokenizer
 from allennlp.models import Model
-from allennlp.modules import TextFieldEmbedder, Seq2VecEncoder
+from allennlp.modules import TextFieldEmbedder, Seq2VecEncoder, FeedForward
 from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.nn import util
 from allennlp.training.metrics import CategoricalAccuracy
 
 from allennlp.modules.token_embedders import TokenEmbedder, PretrainedTransformerMismatchedEmbedder
+
+# FeedForward(124, 2, [64, 32], torch.nn.ReLU(), 0.2)
 
 #self import 
 import src.config as config
@@ -29,14 +31,14 @@ from src.modules.graph_pair2vec_encoders import GraphPair2VecEncoder
 
 # defualt choice for model embedding, can use config file later
 
-@Model.register("simple_model", exist_ok=True)
+@Model.register("graph-nli", exist_ok=True)
 class SynNLIModel(Model):
     def __init__(self,
                  vocab: Vocabulary,
                  embedder: TokenEmbedder,
-                 #projector: FeedForward
+                 projector: FeedForward,
                  encoder: GraphPair2VecEncoder,
-                 #classifier: FeedForward
+                 classifier: FeedForward,
                 ):
         """
         vocab : for edge_labels mainly
@@ -48,9 +50,9 @@ class SynNLIModel(Model):
         num_labels = vocab.get_vocab_size("labels") #3
         num_relations = vocab.get_vocab_size("relations") #20?
         self.embedder = embedder 
-        self.projector = torch.nn.Linear(embedder.get_output_dim(), encoder.get_input_dim())
+        self.projector = projector
         self.encoder = encoder
-        self.classifier = torch.nn.Linear(encoder.get_output_dim(), num_labels)
+        self.classifier = classifier
         self.accuracy = CategoricalAccuracy()
         # check dimension match if required
         return
@@ -86,7 +88,7 @@ class SynNLIModel(Model):
         # Shape: (batch_size, classifier_in_dim)
         cls_vector = self.graph_pair2vec_encoder(sparse_p, sparse_h, g_p, g_h)
         # Shape: (batch_size, num_labels)
-        logits = self.classifier(cls_vector)
+        logits = self.classifier(cls_vector) # 300*4 => 300 => 3
         # Shape: (batch_size, num_labels)
         probs = torch.nn.functional.softmax(logits, dim=0)
         # Shape: TensorDict

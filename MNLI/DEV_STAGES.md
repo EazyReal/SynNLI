@@ -64,9 +64,14 @@
 - due 8/24
 - add Graph2VecEncoder Registrable
 - implement HGEN
+
 - data preprocess code rewrite (argparse, Stanza)
+    - done 8/22
 - data reader rewrite (support cache and read rawtext mode)
+    - done 8/22
 - should add lemmatization option (if use word embedding will be better)
+    - todo
+- 8/23 package making, debugging
 
 # Stage 4 - Train A HGMN model (het graph matching network (may be final))
 - due 8/31

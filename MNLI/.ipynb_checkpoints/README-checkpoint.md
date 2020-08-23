@@ -33,3 +33,6 @@ allennlp train "./src_gmn/training_config.jsonnet" -s "./param/testv1"   --inclu
 - pip install -r requirements
 - + add configs folder for various config
 - note that should take lemmatized as node attr if use work embedding
+- root to spetial token
+- use MLP prjection
+
