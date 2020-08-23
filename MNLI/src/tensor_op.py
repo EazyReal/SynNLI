@@ -173,10 +173,10 @@ def batch_block_pair_attention(data,
     ValueError: if n_blocks is not an integer or not a multiple of 2.
     """
     if not isinstance(n_blocks, int):
-    raise ValueError('n_blocks (%s) has to be an integer.' % str(n_blocks))
+        raise ValueError('n_blocks (%s) has to be an integer.' % str(n_blocks))
 
     if n_blocks % 2 != 0:
-    raise ValueError('n_blocks (%d) must be a multiple of 2.' % n_blocks)
+        raise ValueError('n_blocks (%d) must be a multiple of 2.' % n_blocks)
 
     sim = get_pairwise_similarity(similarity)
 
@@ -190,11 +190,11 @@ def batch_block_pair_attention(data,
     # restricting n_blocks to be a integer constant here and using the plain for
     # loop.
     for i in range(0, n_blocks, 2):
-    x = partitions[i]
-    y = partitions[i + 1]
-    attention_x, attention_y = compute_cross_attention(x, y, sim)
-    results.append(attention_x)
-    results.append(attention_y)
+        x = partitions[i]
+        y = partitions[i + 1]
+        attention_x, attention_y = compute_cross_attention(x, y, sim)
+        results.append(attention_x)
+        results.append(attention_y)
 
     results = tf.concat(results, axis=0)
     # the shape of the first dimension is lost after concat, reset it back
