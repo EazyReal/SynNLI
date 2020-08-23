@@ -29,13 +29,14 @@ from src.modules.graph_pair2vec_encoders import GraphPair2VecEncoder
 
 # defualt choice for model embedding, can use config file later
 
-@Model.register("simple_model")
+@Model.register("simple_model", exist_ok=True)
 class SynNLIModel(Model):
     def __init__(self,
                  vocab: Vocabulary,
                  embedder: TokenEmbedder,
-                 graph_pair2vec_encoder: GraphPair2VecEncoder,
-                 graph_emb_dim: int,
+                 #projector: FeedForward
+                 encoder: GraphPair2VecEncoder,
+                 #classifier: FeedForward
                 ):
         """
         vocab : for edge_labels mainly
@@ -47,17 +48,11 @@ class SynNLIModel(Model):
         num_labels = vocab.get_vocab_size("labels") #3
         num_relations = vocab.get_vocab_size("relations") #20?
         self.embedder = embedder 
-        self.projector = torch.nn.Linear(embedder.get_output_dim(), graph_emb_dim)
-        self.graph_pair2vec_encoder = graph_pair2vec_encoder
-        self.classifier = torch.nn.Linear(gmn.get_output_dim(), num_labels)
+        self.projector = torch.nn.Linear(embedder.get_output_dim(), encoder.get_input_dim())
+        self.encoder = encoder
+        self.classifier = torch.nn.Linear(encoder.get_output_dim(), num_labels)
         self.accuracy = CategoricalAccuracy()
-        # check dimension match
-        check_dimensions_match(embedder.get_output_dim(), encoder.get_input_dim(),
-                               "text field embedding dim", "encoder input dim")
-        check_dimensions_match(encoder.get_output_dim() * 4, projection_feedforward.get_input_dim(),
-                               "encoder output dim", "projection feedforward input")
-        check_dimensions_match(projection_feedforward.get_output_dim(), inference_encoder.get_input_dim(),
-                               "proj feedforward output dim", "inference lstm input dim")
+        # check dimension match if required
         return
         
     def forward(self,
@@ -78,9 +73,11 @@ class SynNLIModel(Model):
         ouput : tensor dict
         """
         # Shape: (batch_size, num_tokens, embedding_dim)
-        #print(tokens_p["tokens"])
         embedded_p = self.embedder(**tokens_p["tokens"])
         embedded_h = self.embedder(**tokens_h["tokens"])
+        # Shape: (batch_size, num_tokens, projected_dim)
+        embedded_p = self.projector(embedded_p)
+        embedded_h = self.projector(embedded_h)
         # Shape:
         # node_attr : (num_tokens, embedding_dim)
         # batch_id : (num_tokens)
