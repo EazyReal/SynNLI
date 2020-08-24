@@ -123,9 +123,9 @@ class NLIGraphReader(DatasetReader):
         file_path = cached_path(file_path)
         with open(file_path, "r") as fo:
             # for knowing len in the beginning
-            lines = fo.readlines()
-            logger.info(msg=len(lines))
-            example_iter = (json.loads(line) for line in lines)
+            # lines = fo.readlines()
+            # logger.info(msg=len(lines))
+            example_iter = (json.loads(line) for line in fo.readlines())
             # we need gold label
             filtered_example_iter = (
                 example for example in example_iter if example[self.f[2]] != "-"

@@ -62,9 +62,8 @@
     
 # (Now) State 3 - Train A HGNN model (het graph embedding w/o interaction)
 - due 8/24
-- add Graph2VecEncoder Registrable
 - implement HGEN
-
+    - done 8/24
 - data preprocess code rewrite (argparse, Stanza)
     - done 8/22
 - data reader rewrite (support cache and read rawtext mode)

@@ -20,6 +20,11 @@ from allennlp.training.metrics import CategoricalAccuracy
 
 from allennlp.modules.token_embedders import TokenEmbedder, PretrainedTransformerMismatchedEmbedder
 
+from allennlp.nn import (
+    InitializerApplicator, 
+    RegularizerApplicator,
+)
+
 # FeedForward(124, 2, [64, 32], torch.nn.ReLU(), 0.2)
 
 #self import 
@@ -86,7 +91,7 @@ class SynNLIModel(Model):
         sparse_p = tensor_op.dense2sparse(embedded_p, tokens_p["tokens"]["mask"])
         sparse_h = tensor_op.dense2sparse(embedded_h, tokens_h["tokens"]["mask"])
         # Shape: (batch_size, classifier_in_dim)
-        cls_vector = self.encoder.forward(sparse_p, sparse_h, g_p, g_h)
+        cls_vector = self.encoder(sparse_p, sparse_h, g_p, g_h)
         # Shape: (batch_size, num_labels)
         logits = self.classifier(cls_vector) # 300*4 => 300 => 3
         # Shape: (batch_size, num_labels)

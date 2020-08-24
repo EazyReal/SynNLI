@@ -5,7 +5,8 @@ import torch_geometric ## nn __init__ has from .conv import * can use directly
 from overrides import overrides
 
 from allennlp.common import Registrable
-#from torch_geometric.nn import GATConv, RGCNConv, CGConv
+
+from .RGCNConv import RGCNConv
 
 """
 An `Graph2GraphEncoder` is known as `GraphConvolutionLayer`
@@ -72,6 +73,7 @@ class _Graph2GraphEncoderLambda(torch.nn.Module):
 # <T:Registrable>.by_name('relu')()
 Registrable._registry[Graph2GraphEncoder] = {
     "gat": (torch_geometric.nn.conv.GATConv, None),
-    "rgcn": (torch_geometric.nn.conv.RGCNConv, None), 
+    #"rgcn": (torch_geometric.nn.conv.RGCNConv, None), 
+    "rgcn": (RGCNConv, None)
     # "linear": (lambda: _Graph2GraphEncoderLambda(lambda x: x, "Linear"), None),  # type: ignore
 }

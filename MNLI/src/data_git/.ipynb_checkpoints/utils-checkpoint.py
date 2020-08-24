@@ -29,14 +29,8 @@ from allennlp_models.structured_prediction.predictors.biaffine_dependency_parser
 from allennlp.predictors.predictor import Predictor #
 
 ## self
-import config
 
 ###########################################################################################
-
-# alias
-p = config.pf
-h = config.hf
-l = config.lf
 
 # root_token
 root_token = "$"

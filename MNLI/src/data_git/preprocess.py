@@ -15,7 +15,7 @@ import stanza
 from stanza.models.common.doc import Document as StanzaDocument
 from stanza.pipeline.core import Pipeline as StanzaPipeline
 # self
-import reader_config as config
+import src.data_git.reader_config as config
 
 logger = logging.getLogger(__name__)
 

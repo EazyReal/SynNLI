@@ -14,6 +14,14 @@
     - the parser version is the one @ 2020/8/22
 - use preprocess.py
 ```
+python preprocess.py -i <raw_data_path> \
+ -o <target_path> \
+ --files <file_names> \
+ --force(if activated, force execution when <target_path exists>) \
+ -m 10(if provided, maximum instances to process is set, this is mainly for testing)
+```
+```
+# example
 python preprocess.py -i ../data/anli_v1.0/R2/ \
  -o ../data/anli_v1.0_preprocessed/R2/ \
  --files dev.jsonl test.jsonl train.jsonl \
@@ -32,7 +40,7 @@ allennlp train "./src_gmn/training_config.jsonnet" -s "./param/testv1"   --inclu
 ## Future Supported Usage
 - pip install -r requirements
 - + add configs folder for various config
-- note that should take lemmatized as node attr if use work embedding
+- note that should take lemmatized as node attr if use word level embedding(or + char embedding to ease)
 - root to spetial token
 - use MLP prjection
 
