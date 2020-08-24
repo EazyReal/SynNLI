@@ -1,15 +1,22 @@
 from overrides import overrides
 from typing import Optional, Dict, Iterable, List, Union
 
-from torch_geometric.nn import GATConv, RGCNConv, CGConv
+import torch_geometric
+import torch
 
 from allennlp.common import Registrable
 
-from src.modules.graph2graph_encoders import Graph2GraphEncoder
+from src.modules.graph2graph_encoders import (
+    Graph2GraphEncoder,
+)
+from src.modules.graph2vec_encoder import (
+    Graph2VecEncoder,
+)
+
 from src.modules.attention import GraphPairAttention
 
 
-class GraphPair2VecEncoder(Registrable):
+class GraphPair2VecEncoder(torch.nn.Module, Registrable):
     """
     A `GraphPair2VecEncoder` is a `Module` that takes
     two sequence of vectors and two graphs
@@ -45,12 +52,15 @@ class GraphEmbeddingNet(GraphPair2VecEncoder):
     then use 'Graph2VecEncoder' to project 2 graphs into the same representation space,
     then return a vector $[g1;g2;g1-g2;g1 \odot g2]$ for further classification
     """
+    
+    """ todo: will uncomment after test
     __slots__ = (
         "_input_dim",
         "_output_dim",
         "_convs",
         "num_layers"
     )
+    """
     
     def __init__(
         self,
@@ -68,6 +78,7 @@ class GraphEmbeddingNet(GraphPair2VecEncoder):
         """
         super().__init__()
         # if given is not List[item], create List[item]
+        # this method implicitly share params? 
         if not isinstance(convs, list):
             convs = [convs] * num_layers
             
@@ -77,12 +88,16 @@ class GraphEmbeddingNet(GraphPair2VecEncoder):
             )
             
         self._convs = torch.nn.ModuleList(convs)
-        self._output_dim = 4*convs[-1].get_output_dim() # for vector pair comparison 
-        self._input_dim = convs[0].get_input_dim()
-
+        self._output_dim = 4*convs[-1].out_channels # for vector pair comparison 
+        self._input_dim = convs[0].in_channels
+        self._pooler = pooler
+        self.num_layers = num_layers
+    
+    @overrides
     def get_output_dim(self):
         return self._output_dim
-
+    
+    @overrides
     def get_input_dim(self):
         return self._input_dim
 
@@ -107,15 +122,15 @@ class GraphEmbeddingNet(GraphPair2VecEncoder):
         e2, t2, eb2 = g2['edge_index'], g2['edge_attr'], g2['batch_id']
         
         # apply Graph2Graph Encoders by module list
-        for conv in zip(
+        for conv, in zip(
             self._convs
         ):
-            x1 = conv(x=x1, edge_index=e1, edge_type=e1)
-            x2 = conv(x=x2, edge_index=e2, edge_type=e2)
+            x1 = conv(x=x1, edge_index=e1, edge_type=t1)
+            x2 = conv(x=x2, edge_index=e2, edge_type=t2)
         
         # Graph Pooling
-        v1 = pooler(x1)
-        v2 = pooler(x2)
+        v1 = self._pooler(x1, batch=b1)
+        v2 = self._pooler(x2, batch=b2)
         # Shape: (batch_size, _out_put_dim)
         out = torch.cat([v1, v2, v1-v2, v1*v2], dim=1)
 

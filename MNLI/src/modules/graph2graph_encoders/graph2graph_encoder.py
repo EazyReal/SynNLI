@@ -24,19 +24,22 @@ class Graph2GraphEncoder(torch.nn.Module, Registrable):
     A `Graph2GraphEncoder` is a `Module` that
     takes a graph and returs its updated version
     
+    the API to outside world are `self.in_channels`, `self.out_channels`
+    
     Input shape :
         `(SparseBatch, SparseGraphBatch)`;
     output shape:
         `(SparseBatch, SparseGraphBatch)`.
     """
-    def get_input_dim(self) -> int:
+    
+    def get_input_dim(self) -> int: # not used
         """
         Returns the dimension of the vector input for each element in the sequence input
         to a `Seq2VecEncoder`.
         """
         return self.in_channels
         
-    def get_output_dim(self) -> int:
+    def get_output_dim(self) -> int: # not used
         """
         Returns the dimension of the final vector output by this `Seq2VecEncoder`.  This is `not`
         the shape of the returned tensor, but the last element of that shape.
@@ -70,5 +73,5 @@ class _Graph2GraphEncoderLambda(torch.nn.Module):
 Registrable._registry[Graph2GraphEncoder] = {
     "gat": (torch_geometric.nn.conv.GATConv, None),
     "rgcn": (torch_geometric.nn.conv.RGCNConv, None), 
-    #"linear": (lambda: _Graph2GraphEncoderLambda(lambda x: x, "Linear"), None),  # type: ignore
+    # "linear": (lambda: _Graph2GraphEncoderLambda(lambda x: x, "Linear"), None),  # type: ignore
 }

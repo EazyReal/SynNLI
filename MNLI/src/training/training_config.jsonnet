@@ -5,12 +5,12 @@
 local bert_model = "bert-base-uncased";
 
 local data_root = "/work/2020-IIS-NLU-internship/MNLI/data";
-local train_data_path = data_root + "/MNLI_Stanza/pre_multinli_1.0_dev_matched.jsonl";
-local validation_data_path = data_root + "/MNLI_Stanza/pre_multinli_1.0_dev_mismatched.jsonl";
+local train_data_path = data_root + "/MNLI_Stanza/pre_multinli_1.0_train.jsonl";
+local validation_data_path = data_root + "/MNLI_Stanza/pre_multinli_1.0_dev_matched.jsonl";
 local cache_data_dir = data_root + "/MNLI_instance_cache";
 
 local BATCH_SIZE = 32;
-local EPOCH = 10;
+local EPOCH = 20;
 
 local input_fields = ["sentence1", "sentence2", "gold_label"];
 local num_edge_labels = 20;
