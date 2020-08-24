@@ -7,11 +7,8 @@ local max_instances = null;
 
 //data, dirs
 local data_root = "/work/2020-IIS-NLU-internship/MNLI/data";
-//local train_data_path = data_root + "/MNLI_Stanza/pre_multinli_1.0_train.jsonl";
-local train_data_path = data_root + "/anli_v1.0_preprocessed/R1/train.jsonl";
-//local validation_data_path = data_root + "/MNLI_Stanza/pre_multinli_1.0_dev_matched.jsonl";
-local validation_data_path = data_root + "/anli_v1.0_preprocessed/R1/dev.jsonl";
-//local cache_data_dir = data_root + "/MNLI_instance_cache";
+local train_data_path = data_root + "/MNLI_Stanza/pre_multinli_1.0_train.jsonl";
+local validation_data_path = data_root + "/MNLI_Stanza/pre_multinli_1.0_dev_matched.jsonl";
 local cache_data_dir = null;
 local input_fields = ["sentence1", "sentence2", "gold_label"];
 
@@ -29,14 +26,10 @@ local BATCH_SIZE = 32;
 local EPOCH = 30;
 local LR = 0.0005;
 local C_L2 = 0.1; //L2 norm constant
-local patience = 2;
+local patience = 30;
 local use_amp = false; //no scatter for Half
 
-
-
-
 // care vocabulary of edge labels, this is related to model
-
 {
     "dataset_reader" : {
         "type": "nli-graph",

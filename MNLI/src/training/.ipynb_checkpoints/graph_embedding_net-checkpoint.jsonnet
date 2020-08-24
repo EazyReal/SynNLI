@@ -26,9 +26,10 @@ local num_edge_labels = 20;
 
 //training
 local BATCH_SIZE = 32;
-local EPOCH = 50;
-local LR = 0.0001;
-local patience = null; //patience seems broken
+local EPOCH = 30;
+local LR = 0.0005;
+local C_L2 = 0.1; //L2 norm constant
+local patience = 2;
 local use_amp = false; //no scatter for Half
 
 
@@ -143,7 +144,7 @@ local use_amp = false; //no scatter for Half
         "optimizer": {
             "type": "huggingface_adamw",
             "lr": LR,
-            "weight_decay": 0.99,
+            "weight_decay": C_L2,
         },
         "patience": patience, # early stopping if no improvement in 0 epoch
         //"validation_metric": "-loss",

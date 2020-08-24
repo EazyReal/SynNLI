@@ -104,7 +104,7 @@ class NLIGraphReader(DatasetReader):
         **kwargs,
     ) -> None:
         #super().__init__(manual_distributed_sharding=True, **kwargs)
-        super().__init__(**kwargs)
+        super(NLIGraphReader, self).__init__(**kwargs)
         self._wordpiece_tokenizer = wordpiece_tokenizer or PretrainedTransformerTokenizer(config.TRANSFORMER_NAME)
         self._token_indexers = token_indexers or {"tokens": PretrainedTransformerMismatchedIndexer(config.TRANSFORMER_NAME)}
         self._combine_input_fields = combine_input_fields or False

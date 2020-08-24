@@ -1,5 +1,43 @@
 # SynNLI 
 
+## Description
+- this repo uses allennlp as base repo
+
+## AllenNlp
+- a quick guide of mine can be found at the same folder
+- for insight, please visit allennlp document and github
+
+## Customs Classes and Operations
+- `GraphPair2VecEncoder`
+    - 'gen', 'gmn'
+- `Graph2GraphEncoder`
+    - known as `graph convolution layer` in `pytorch_geometric` 
+- `GraphPairAttention`
+    - for graph matching in sparse batch
+    - tf.dynamic_partition + normal attention
+- `NodeUpdater`
+    - A wrapper over `RNN`s
+- `Graph2VecEncoder`
+    - known as `global pooling layer` in `pytorch_geometric` 
+    - 'global_attention'
+- `SynNLIModel(base=Model)``
+    - use `Embedder` to embed input
+    - use `GraphPair2VecEncoder` to get compare vector for classifier to make final decision
+- `tensor_op.py`
+    - batch conversion between normal model and graph model
+        - sparse2dense
+        - dense2sparse
+- `SparseAdjacencyField`
+    - cooperate with `pytorch_geometric` to get sparce graph batch
+    - see `batch_tensors()` and `as_tensor()` for the key of implementation
+- `NLIGraphReader`
+    - read graph input (parsed by `Stanza`)
+- `preprocess.py`
+    - see the `Preprocess` section for detail
+- `configs`
+    - can be found in `src/training`
+    - for allennlp train
+
 ## Usage (Cur)
 - ./install_dependencies.sh 
 - download NLI style data set to data
