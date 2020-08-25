@@ -7,7 +7,7 @@
 - a quick guide of mine can be found at the same folder
 - for insight, please visit allennlp document and github
 
-## Customs Classes and Operations
+## Custom Classes and Operations
 - `GraphPair2VecEncoder`
     - 'gen', 'gmn'
 - `Graph2GraphEncoder`
@@ -20,7 +20,7 @@
 - `Graph2VecEncoder`
     - known as `global pooling layer` in `pytorch_geometric` 
     - 'global_attention'
-- `SynNLIModel(base=Model)``
+- `SynNLIModel(base=Model)`
     - use `Embedder` to embed input
     - use `GraphPair2VecEncoder` to get compare vector for classifier to make final decision
 - `tensor_op.py`

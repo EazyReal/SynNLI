@@ -6,20 +6,15 @@ import torch
 
 from allennlp.common import Registrable
 
-from src.modules.graph2graph_encoders import (
+from src.modules import (
     Graph2GraphEncoder,
-)
-from src.modules.graph2vec_encoders import (
     Graph2VecEncoder,
-)
-
-from src.modules.graph_pair2vec_encoders.graph_pair2vec_encoder import (
     GraphPair2VecEncoder,
 )
 #from src.modules.attention import GraphPairAttention
 
 # todo, figure out why this is bugged
-@GraphPair2VecEncoder.register("graph_embedding_net", exist_ok=True)
+@GraphPair2VecEncoder.register("graph_embedding_net")
 class GraphEmbeddingNet(GraphPair2VecEncoder):
     """
     `GraphEmbeddingNet` encodes 2 graphs with `Graph2GraphEncoder` seperately,
@@ -50,7 +45,7 @@ class GraphEmbeddingNet(GraphPair2VecEncoder):
         note that convs is str or List[str] (in Graph2GraphEncoder.list_availabels() )
         so that this constructor calls Graph2GraphEncoder.from_name(convs[i]) for constructing convolutions
         """
-        super().__init__()
+        super(GraphEmbeddingNet, self).__init__()
         # if given is not List[item], create List[item]
         # this method implicitly share params? 
         if not isinstance(convs, list):

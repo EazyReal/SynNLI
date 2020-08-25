@@ -12,6 +12,6 @@ from .node_updaters import (
     NodeUpdater,
 )
 
-from .attention import (
-    GraphPairAttention,
+from .graph_pair2graph_pair_encoders import (
+    GraphPair2GraphPairEncoder,
 )

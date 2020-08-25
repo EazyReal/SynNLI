@@ -6,28 +6,17 @@ import torch
 
 from allennlp.common import Registrable
 
-from src.modules.graph2graph_encoders import (
-    Graph2GraphEncoder,
-)
-from src.modules.graph2vec_encoders import (
+from src.modules import (
     Graph2VecEncoder,
-)
-
-from src.modules.node_updaters import (
-    NodeUpdater,
-)
-
-from src.modules.attention import (
-    GraphPairAttention,
-)
-
-from src.modules.graph_pair2vec_encoders.graph_pair2vec_encoder import (
     GraphPair2VecEncoder,
+    Graph2GraphEncoder,
+    NodeUpdater,
+    GraphPair2GraphPairEncoder
 )
 #from src.modules.attention import GraphPairAttention
 
 # todo, figure out why this is bugged
-@GraphPair2VecEncoder.register("graph_matching_net")
+@GraphPair2VecEncoder.register("graph_matching_net", exist_ok=True)
 class GraphMatchingNet(GraphPair2VecEncoder):
     """
     `GraphMatchingNet` differs from `GraphEmbeddingNet` with an extra cross graph attention.
@@ -45,26 +34,32 @@ class GraphMatchingNet(GraphPair2VecEncoder):
         self,
         num_layers: int,
         convs: Graph2GraphEncoder, 
-        att: GraphPairAttention,
+        atts: GraphPair2GraphPairEncoder,
         updater: NodeUpdater,  
         pooler: Graph2VecEncoder, 
     ) -> None:
         """
         `GraphMatchingNet` constructor
         """
-        super().__init__()
+        super(GraphMatchingNet, self).__init__()
         # if given is not List[item], create List[item]
-        # this method implicitly share params? 
         if not isinstance(convs, list):
-            convs = [convs] * num_layers
+            convs = [convs] * num_layers # share param
+        if not isinstance(atts, list):
+            atts = [atts] * num_layers
             
         if len(convs) != num_layers:
             raise ConfigurationError(
                 "len(convs) (%d) != num_layers (%d)" % (len(convs), num_layers)
             )
+        if len(atts) != num_layers:
+            raise ConfigurationError(
+                "len(atts) (%d) != num_layers (%d)" % (len(atts), num_layers)
+            )
+        
             
         self._convs = torch.nn.ModuleList(convs)
-        self._att = att
+        self._atts = torch.nn.ModuleList(atts)
         self._updater = updater
         self._output_dim = 4*convs[-1].out_channels # for vector pair comparison 
         self._input_dim = convs[0].in_channels
@@ -100,20 +95,17 @@ class GraphMatchingNet(GraphPair2VecEncoder):
         e2, t2, eb2 = g2['edge_index'], g2['edge_attr'], g2['batch_id']
         
         # apply Graph2Graph Encoders by module list
-        for conv, in zip(
-            self._convs
-        ):
-            # calculate message
-            x1_msg = conv(x=x1, edge_index=e1, edge_type=t1)
-            x2_msg = conv(x=x2, edge_index=e2, edge_type=t2)
-            # calculate matching
-            x1_match = self._att(x1, x2, b1, b2)
-            x2_match = self._att(x2, x1, b2, b1)
-            # update
-            x1 = self._updater(x1, [x1_msg, x1_match])
-            x2 = self._updater(x2, [x2_msg, x2_match])
+        for i in range(self.num_layers):
+            # calculate message (n_nodes, dim_encoder)
+            x1_msg = self._convs[i](x=x1, edge_index=e1, edge_type=t1)
+            x2_msg = self._convs[i](x=x2, edge_index=e2, edge_type=t2)
+            # calculate matching (n_nodes, dim_matching)
+            x1_match, x2_match = self._atts[i](x1, x2, b1, b2)
+            # update (n_nodes, dim_encoder)
+            x1 = self._updater([x1_msg, x1_match], x1)
+            x2 = self._updater([x2_msg, x2_match], x2)
         
-        # Graph Pooling
+        # Graph Pooling => (batch_size, _input_dim)
         v1 = self._pooler(x1, batch=b1)
         v2 = self._pooler(x2, batch=b2)
         # Shape: (batch_size, _out_put_dim)
