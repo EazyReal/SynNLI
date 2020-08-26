@@ -6,9 +6,8 @@
 
 
 local test = false;
-local use_mnli = false; //anli bug
+local use_mnli = true; //anli bug
 local gpu = 0; //use cuda:0
-
 //local gpu = null; //test with cpu
 
 local max_instances = if test then 100 else null;
@@ -17,10 +16,7 @@ local max_instances = if test then 100 else null;
 //data, dirs
 local data_root = "/work/2020-IIS-NLU-internship/MNLI/data";
 local train_data_path = data_root + if use_mnli then "/MNLI_Stanza/pre_multinli_1.0_train.jsonl" else "/anli_v1.0_preprocessed/R1/train.jsonl" ;
-//local train_data_path = data_root + "/anli_v1.0_preprocessed/R1/train.jsonl";
 local validation_data_path = data_root + if use_mnli then "/MNLI_Stanza/pre_multinli_1.0_dev_matched.jsonl" else "/anli_v1.0_preprocessed/R1/dev.jsonl";
-//local validation_data_path = data_root + "/anli_v1.0_preprocessed/R1/dev.jsonl";
-//local cache_data_dir = data_root + "/MNLI_instance_cache";
 local cache_data_dir = null;
 local input_fields = ["sentence1", "sentence2", "gold_label"];
 

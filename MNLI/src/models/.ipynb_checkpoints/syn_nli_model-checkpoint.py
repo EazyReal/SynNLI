@@ -17,7 +17,7 @@ from allennlp.models import Model
 from allennlp.modules import TextFieldEmbedder, Seq2VecEncoder, FeedForward
 from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.nn import util
-from allennlp.training.metrics import CategoricalAccuracy
+from allennlp.training.metrics import CategoricalAccuracy, Entropy
 
 from allennlp.modules.token_embedders import TokenEmbedder, PretrainedTransformerMismatchedEmbedder
 
@@ -60,6 +60,7 @@ class SynNLIModel(Model):
         self.encoder = encoder
         self.classifier = classifier
         self.accuracy = CategoricalAccuracy()
+        self.entropy = Entropy()
         # check dimension match if required
         return
         
@@ -110,8 +111,14 @@ class SynNLIModel(Model):
         if label is not None:
             #print(logits.size(), label.size())
             self.accuracy(logits, label)
+            # the two value can be kind of different for numerical isse IMO
+            self.entropy(logits, label)
             output['loss'] = torch.nn.functional.cross_entropy(logits, label)
         return output
-
+    
+    # add entropy support for visualizing loss
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
-        return {"accuracy": self.accuracy.get_metric(reset)}
+        return {
+            "accuracy": self.accuracy.get_metric(reset),
+            "entropy": self.entropy.get_metric(reset)["entropy"].item(),
+        }
