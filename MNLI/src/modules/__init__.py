@@ -1,17 +1,16 @@
-from .graph2graph_encoders.graph2graph_encoder import (
+from src.modules.graph2graph_encoders.graph2graph_encoder import (
     Graph2GraphEncoder,
 )
-from .graph_pair2vec_encoders.graph_pair2vec_encoder import (
+from src.modules.graph_pair2vec_encoders.graph_pair2vec_encoder import (
     GraphPair2VecEncoder,
-    # GraphEmbeddingNet, this will cause repetitive import error(registrable)
 )
-from .graph2vec_encoders.graph2vec_encoder import (
+from src.modules.graph2vec_encoders.graph2vec_encoder import (
     Graph2VecEncoder,
 )
-from .node_updaters import (
+from src.modules.node_updaters import (
     NodeUpdater,
 )
 
-from .graph_pair2graph_pair_encoders import (
+from src.modules.graph_pair2graph_pair_encoders import (
     GraphPair2GraphPairEncoder,
 )

@@ -1,3 +1,10 @@
+"""
+from pytorch geometric ``
+original paper is ``
+modification = 
+1. get_input/output_dim
+"""
+
 from typing import Optional, Union, Tuple
 from torch_geometric.typing import OptTensor, Adj
 
@@ -145,6 +152,12 @@ class RGCNConv(MessagePassing):
         glorot(self.comp)
         glorot(self.root)
         zeros(self.bias)
+        
+    def get_input_dim(self):
+        return self.in_channels
+    
+    def get_output_dim(self):
+        return self.out_channels
 
     def forward(self, x: Union[OptTensor, Tuple[OptTensor, Tensor]],
                 edge_index: Adj, edge_type: OptTensor = None):

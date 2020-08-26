@@ -7,6 +7,7 @@ from overrides import overrides
 from allennlp.common import Registrable
 
 from .RGCNConv import RGCNConv
+from .HGTConv import HGTConv
 
 """
 An `Graph2GraphEncoder` is known as `GraphConvolutionLayer`
@@ -74,6 +75,7 @@ class _Graph2GraphEncoderLambda(torch.nn.Module):
 Registrable._registry[Graph2GraphEncoder] = {
     "gat": (torch_geometric.nn.conv.GATConv, None),
     #"rgcn": (torch_geometric.nn.conv.RGCNConv, None), 
-    "rgcn": (RGCNConv, None)
+    "rgcn": (RGCNConv, None),
+    "hgt": (HGTConv, None),
     # "linear": (lambda: _Graph2GraphEncoderLambda(lambda x: x, "Linear"), None),  # type: ignore
 }

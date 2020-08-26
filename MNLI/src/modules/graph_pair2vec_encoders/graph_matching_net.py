@@ -6,17 +6,14 @@ import torch
 
 from allennlp.common import Registrable
 
-from src.modules import (
-    Graph2VecEncoder,
-    GraphPair2VecEncoder,
-    Graph2GraphEncoder,
-    NodeUpdater,
-    GraphPair2GraphPairEncoder
-)
-#from src.modules.attention import GraphPairAttention
+from src.modules.graph2graph_encoders import  Graph2GraphEncoder
+from src.modules.graph2vec_encoders import Graph2VecEncoder
+from src.modules.graph_pair2graph_pair_encoders import GraphPair2GraphPairEncoder 
+from src.modules.node_updaters import NodeUpdater
 
-# todo, figure out why this is bugged
-@GraphPair2VecEncoder.register("graph_matching_net", exist_ok=True)
+from src.modules.graph_pair2vec_encoders.graph_pair2vec_encoder import GraphPair2VecEncoder 
+
+@GraphPair2VecEncoder.register("graph_matching_net")
 class GraphMatchingNet(GraphPair2VecEncoder):
     """
     `GraphMatchingNet` differs from `GraphEmbeddingNet` with an extra cross graph attention.
@@ -61,8 +58,8 @@ class GraphMatchingNet(GraphPair2VecEncoder):
         self._convs = torch.nn.ModuleList(convs)
         self._atts = torch.nn.ModuleList(atts)
         self._updater = updater
-        self._output_dim = 4*convs[-1].out_channels # for vector pair comparison 
-        self._input_dim = convs[0].in_channels
+        self._output_dim = 4*convs[-1].get_output_dim() # for vector pair comparison 
+        self._input_dim = convs[0].get_input_dim()
         self._pooler = pooler
         self.num_layers = num_layers
     
@@ -97,8 +94,14 @@ class GraphMatchingNet(GraphPair2VecEncoder):
         # apply Graph2Graph Encoders by module list
         for i in range(self.num_layers):
             # calculate message (n_nodes, dim_encoder)
-            x1_msg = self._convs[i](x=x1, edge_index=e1, edge_type=t1)
-            x2_msg = self._convs[i](x=x2, edge_index=e2, edge_type=t2)
+            from src.modules.graph2graph_encoders.HGTConv import HGTConv
+            if isinstance(self._convs[i], HGTConv):
+                #print("debug")
+                x1_msg = self._convs[i](x=x1, edge_index=e1, edge_type=t1)
+                x2_msg = self._convs[i](x=x2, edge_index=e2, edge_type=t2)
+            else:
+                x1_msg = self._convs[i](x=x1, edge_index=e1, edge_type=t1)
+                x2_msg = self._convs[i](x=x2, edge_index=e2, edge_type=t2)
             # calculate matching (n_nodes, dim_matching)
             x1_match, x2_match = self._atts[i](x1, x2, b1, b2)
             # update (n_nodes, dim_encoder)

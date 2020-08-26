@@ -6,14 +6,12 @@ import torch
 
 from allennlp.common import Registrable
 
-from src.modules import (
-    Graph2GraphEncoder,
-    Graph2VecEncoder,
-    GraphPair2VecEncoder,
-)
-#from src.modules.attention import GraphPairAttention
+from src.modules.graph2graph_encoders import  Graph2GraphEncoder
+from src.modules.graph2vec_encoders import Graph2VecEncoder
+from src.modules.graph_pair2graph_pair_encoders import GraphPair2GraphPairEncoder 
 
-# todo, figure out why this is bugged
+from src.modules.graph_pair2vec_encoders.graph_pair2vec_encoder import GraphPair2VecEncoder 
+
 @GraphPair2VecEncoder.register("graph_embedding_net")
 class GraphEmbeddingNet(GraphPair2VecEncoder):
     """
@@ -57,8 +55,8 @@ class GraphEmbeddingNet(GraphPair2VecEncoder):
             )
             
         self._convs = torch.nn.ModuleList(convs)
-        self._output_dim = 4*convs[-1].out_channels # for vector pair comparison 
-        self._input_dim = convs[0].in_channels
+        self._output_dim = 4*convs[-1].get_output_dim() # for vector pair comparison 
+        self._input_dim = convs[0].get_input_dim()
         self._pooler = pooler
         self.num_layers = num_layers
     

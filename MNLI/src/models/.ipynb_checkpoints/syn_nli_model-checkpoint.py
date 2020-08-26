@@ -6,6 +6,7 @@ import json
 from typing import Dict, Iterable, List
 
 # allennlp
+import numpy as np
 import torch
 from allennlp.data import DatasetReader, DataLoader, Instance, Vocabulary
 from allennlp.data.fields import LabelField, TextField
@@ -82,9 +83,13 @@ class SynNLIModel(Model):
         # Shape: (batch_size, num_tokens, embedding_dim)
         embedded_p = self.embedder(**tokens_p["tokens"])
         embedded_h = self.embedder(**tokens_h["tokens"])
+        assert(not torch.any(torch.isnan(embedded_p)))
+        assert(not torch.any(torch.isnan(embedded_h)))
         # Shape: (batch_size, num_tokens, projected_dim)
         embedded_p = self.projector(embedded_p)
         embedded_h = self.projector(embedded_h)
+        assert(not torch.any(torch.isnan(embedded_p)))
+        assert(not torch.any(torch.isnan(embedded_h)))
         # Shape:
         # node_attr : (num_tokens, embedding_dim)
         # batch_id : (num_tokens)
@@ -92,10 +97,14 @@ class SynNLIModel(Model):
         sparse_h = tensor_op.dense2sparse(embedded_h, tokens_h["tokens"]["mask"])
         # Shape: (batch_size, classifier_in_dim)
         cls_vector = self.encoder(sparse_p, sparse_h, g_p, g_h)
+        assert(not torch.any(torch.isnan(sparse_p["data"])))
+        assert(not torch.any(torch.isnan(sparse_h["data"])))
         # Shape: (batch_size, num_labels)
         logits = self.classifier(cls_vector) # 300*4 => 300 => 3
+        assert(not torch.any(torch.isnan(cls_vector)))
         # Shape: (batch_size, num_labels)
-        probs = torch.nn.functional.softmax(logits, dim=0)
+        probs = torch.nn.functional.softmax(logits, dim=1) # bug
+        # how did the gen model with this bug achieve 70% though...
         # Shape: TensorDict
         output = {'probs': probs}
         if label is not None:

@@ -12,7 +12,7 @@
     - 'gen', 'gmn'
 - `Graph2GraphEncoder`
     - known as `graph convolution layer` in `pytorch_geometric` 
-- `GraphPairAttention`
+- `GraphPair2GraphPairEncoder`
     - for graph matching in sparse batch
     - tf.dynamic_partition + normal attention
 - `NodeUpdater`
