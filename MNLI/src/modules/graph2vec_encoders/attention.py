@@ -1,10 +1,15 @@
 """
 inject to allennlp 
 """
+# allennlp
 from allennlp.modules import FeedForward
 from allennlp.common import Registrable
-from .graph2vec_encoder import Graph2VecEncoder
 
+# src
+from .graph2vec_encoder import Graph2VecEncoder
+from src.tensor_op import sparse2dense
+
+# torch and pytorch geometric
 import torch
 from torch_scatter import scatter_add
 from torch_geometric.utils import softmax
@@ -12,7 +17,7 @@ from torch_geometric.utils import softmax
 from torch_geometric.nn.inits import reset #modified
 
 
-@Graph2VecEncoder.register("global_attention")
+@Graph2VecEncoder.register("global_attention", exist_ok=True)
 class GlobalAttention(Graph2VecEncoder):
     r"""Global soft attention layer from the `"Gated Graph Sequence Neural
     Networks" <https://arxiv.org/abs/1511.05493>`_ paper
@@ -38,15 +43,18 @@ class GlobalAttention(Graph2VecEncoder):
         super(GlobalAttention, self).__init__()
         self.gate_nn = gate_nn
         self.nn = nn
-
         self.reset_parameters()
 
     def reset_parameters(self):
         reset(self.gate_nn)
         reset(self.nn)
 
-    def forward(self, x, batch, size=None):
-        """"""
+    def forward(self, x, batch, size=None, return_attention=False):
+        """
+        x is node representations
+        batch is batch_indices
+        size is not used (from original code)
+        """
         x = x.unsqueeze(-1) if x.dim() == 1 else x
         size = batch[-1].item() + 1 if size is None else size
 
@@ -56,8 +64,15 @@ class GlobalAttention(Graph2VecEncoder):
 
         gate = softmax(gate, batch, num_nodes=size)
         out = scatter_add(gate * x, batch, dim=0, dim_size=size)
-
-        return out
+        
+        if return_attention:
+            # convert to list of 1*n matrix for visualization
+            from src.tensor_op import sorted_dynamic_parition
+            return_att = sorted_dynamic_parition(gate, batch)
+            return_att = [att.detach().T for att in return_att]
+            return out, return_att
+        else:
+            return out
 
     def __repr__(self):
         return '{}(gate_nn={}, nn={})'.format(self.__class__.__name__,

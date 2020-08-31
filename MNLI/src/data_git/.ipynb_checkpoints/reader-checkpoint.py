@@ -138,7 +138,20 @@ class NLIGraphReader(DatasetReader):
                 premise : Union[StanzaDoc, List, str] = example[self.f[0]]
                 hypothesis :  Union[StanzaDoc, List, str] = example[self.f[1]]
                 yield self.text_to_instance(premise, hypothesis, label)
-            
+                
+    
+    #@classmethod
+    def instance2sent(self, instance):
+        """
+        return string for instance
+        todo: add graph visualization
+        """
+        return {
+            "premise": " ".join([token.text for token in instance.fields["tokens_p"].tokens]),
+            "hypothesis": " ".join([token.text for token in instance.fields["tokens_h"].tokens]),
+        }
+        
+    
     @overrides
     def text_to_instance(
         self, 
@@ -158,7 +171,7 @@ class NLIGraphReader(DatasetReader):
 
         fields: Dict[str, Field] = {}
         
-        if not self._input_parsed:
+        if isinstance(premise, str): # or use ` not self._input_paresed`
             premise : StanzaDoc = self._parser(premise)
             hypothesis : StanzaDoc = self._parser(hypothesis)
         g_p: PyGeoData = utils.doc2graph(premise)
@@ -175,14 +188,14 @@ class NLIGraphReader(DatasetReader):
             #hypothesis_tokens = self._wordpiece_tokenizer.add_special_tokens(g_h.node_attr)
             fields["tokens_p"] = TextField(tokens_p, self._token_indexers) # defualt = {tokens: tokens}?
             fields["tokens_h"] = TextField(tokens_h, self._token_indexers)
-            fields["g_p"] = SparseAdjacencyField(graph=g_p,
-                                                 sequence_field=fields["tokens_p"],
-                                                 label_namespace = "edge_labels"
-                                                )
-            fields["g_h"] = SparseAdjacencyField(graph=g_h,
-                                                 sequence_field=fields["tokens_h"],
-                                                 label_namespace = "edge_labels"
-                                                )
+        fields["g_p"] = SparseAdjacencyField(graph=g_p,
+                                             sequence_field=fields["tokens_p"],
+                                             label_namespace = "edge_labels"
+                                            )
+        fields["g_h"] = SparseAdjacencyField(graph=g_h,
+                                             sequence_field=fields["tokens_h"],
+                                             label_namespace = "edge_labels"
+                                            )
         
         # care do not use `if label` for label can be 0(in int)
         if gold_label is not None:

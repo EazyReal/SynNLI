@@ -38,6 +38,28 @@ root_token = "$"
 def g2sent(g : PytorchGeoData):
     return " ".join(g.node_attr)
 
+
+
+def draw_edges(edge_index: torch.Tensor, tokens: List[str])->None:
+    fig = plt.figure() # figsize=None
+    ax = fig.add_subplot(111)
+    cax = ax.imshow(att, cmap='bone', origin='upper')
+    fig.colorbar(cax)
+    # Set up axes
+    ax.set_xticks(np.arange(len(seq)))
+    ax.set_xticklabels(seq)
+    ax.set_yticklabels([])
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+
+
+    # Show label at every tick
+    #ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
+    #ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
+    ax.set_title("Attention")
+    fig.tight_layout()
+    plt.show()
+    return 
+
 def draw(data : PytorchGeoData, node_size=1000, font_size=12, save_img_file=None):
     """
     input: (torch_geometric.data.data.Data, path or string)
@@ -47,8 +69,12 @@ def draw(data : PytorchGeoData, node_size=1000, font_size=12, save_img_file=None
     pos = nx.nx_pydot.graphviz_layout(G)
     if(data.edge_attr != None):
         edge_labels = {(u.item(),v.item()):lab for u,v,lab in zip(data.edge_index[0], data.edge_index[1], data.edge_attr)}
+    else:
+        edge_labels = None
     if(data.node_attr != None):
         node_labels = dict(zip(G.nodes, data.node_attr))
+    else:
+        node_labels = None
     nx.draw(G, pos=pos, nodecolor='r', edge_color='b', node_size=node_size, with_labels=False)
     nx.draw_networkx_labels(G, pos=pos, labels=node_labels, font_size=font_size)
     nx.draw_networkx_edge_labels(G, pos=pos, edge_labels=edge_labels, font_size=font_size)
@@ -63,7 +89,7 @@ def draw(data : PytorchGeoData, node_size=1000, font_size=12, save_img_file=None
 # Stanza   #
 ######################################################################################################
 
-def text2graph(text : str, nlp : StanzaPipeline):
+def text2graph(text : str, nlp : StanzaPipeline) -> PytorchGeoData:
     """
     text2doc by Stanza
     doc2graph by utils.doc2graph 

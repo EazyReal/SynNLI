@@ -15,7 +15,6 @@ import stanza
 from stanza.models.common.doc import Document as StanzaDocument
 from stanza.pipeline.core import Pipeline as StanzaPipeline
 # self
-import src.data_git.reader_config as config
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +25,17 @@ anli_l_field = "label"
 anli_id_field = "uid"
 
 # this is the fields (in, out) called by the program
-default_in_fields = [anli_p_field, anli_h_field, anli_l_field, anli_id_field]
-default_out_fields = ["sentence1", "sentence2", "gold_label", "id"]
-labels = ["n", "e", "c"]
+in_fields = [
+    "sentence1", # premise 
+    "sentence2", # hypothesis
+    "gold_label", # label here
+    "pairID", # problem id here
+]
+out_fields = ["sentence1", "sentence2", "gold_label", "id"]
+# for HANS, there is only two labels
+labels = ["non-entailment", "entailment"]
+# for MNLI+HANS, may have to do some trick in the dataset reader (HANSreader)
+# labels = ["n", "e", "c"]
 
 """
 defaults usage
@@ -113,7 +120,7 @@ def process_file(data_file : Union[str, Path],
     return parsed_data
 
 def init_args(arg_string=None):
-    parser = argparse.ArgumentParser(description='Preprocess datasets.')
+    parser = argparse.ArgumentParser(description='Preprocess datasets. Note that you should configure your field names and labels in this preprocess.py')
     parser.add_argument('-i', '--input_dir', dest='input_dir', type=str, default=None, required=True, help='input dir should end with / ')
     parser.add_argument('-o', '--output_dir', dest='output_dir', type=str, default=None, required=True)
     parser.add_argument('--files', dest='files', nargs='+', type=str, default=None, required=True)
@@ -146,6 +153,6 @@ if __name__ == "__main__":
                      target_file=args.output_dir+file,
                      parser = nlp,
                      max_num_of_instances=args.max_num_of_instances,
-                     input_fields=default_in_fields,
-                     output_fields=default_out_fields,
+                     input_fields=in_fields,
+                     output_fields=out_fields,
                      force_exe=args.force)

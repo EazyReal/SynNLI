@@ -12,3 +12,4 @@
 - MNLI
     - for entailment
     - working on it
+    - graph matching networks for natural language inference, written in AllenNLP

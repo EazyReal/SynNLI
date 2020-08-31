@@ -2,6 +2,16 @@
 
 ---
 
+## 8/27 todo work
+- finish Q-test construciton + parsing
+- Predition on Q-Test
+- Gate Visualizer
+- Attention Visualizer
+- BiMPM->Traditional GMN version
+    - test different matching cut off
+- no dropout version
+    - In alber, dropout hurs
+
 ## 8/27
 
 ### Pressing Issues

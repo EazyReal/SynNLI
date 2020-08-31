@@ -1,5 +1,5 @@
 from overrides import overrides
-from typing import Optional, Dict, Iterable, List, Union
+from typing import Optional, Dict, Iterable, List, Union, Tuple
 
 import torch_geometric
 import torch
@@ -77,12 +77,14 @@ class GraphMatchingNet(GraphPair2VecEncoder):
         x2: Dict[str, torch.Tensor],
         g1: Dict[str, torch.Tensor],
         g2: Dict[str, torch.Tensor],
-    ) -> torch.Tensor:
+        return_attention: bool = False,
+    ): # -> Union[torch.Tensor, Tuple]:
         """
         input:
             g1, g2 : Dict[str, torch.Tensor] sparse_adjacency batch
             n1, n2 : Dict[str, torch.Tensor] sparse_node_embedding batch
             e1, e2 : OptTensor sparse_edge_embedding batch
+            return_attention : bool, flag to turn on or off attention return
         """
         # node_tensor, node_batch_indices
         x1, b1 = x1["data"], x1["batch_indices"]
@@ -90,6 +92,9 @@ class GraphMatchingNet(GraphPair2VecEncoder):
         # edge_index, edge_type, edge_batch
         e1, t1, eb1 = g1['edge_index'], g1['edge_attr'], g1['batch_id']
         e2, t2, eb2 = g2['edge_index'], g2['edge_attr'], g2['batch_id']
+        # return attention
+        if return_attention:
+            atts = {}
         
         # apply Graph2Graph Encoders by module list
         for i in range(self.num_layers):
@@ -109,9 +114,18 @@ class GraphMatchingNet(GraphPair2VecEncoder):
             x2 = self._updater([x2_msg, x2_match], x2)
         
         # Graph Pooling => (batch_size, _input_dim)
-        v1 = self._pooler(x1, batch=b1)
-        v2 = self._pooler(x2, batch=b2)
+        if return_attention:
+            v1, pooler_att1 = self._pooler(x1, batch=b1, return_attention=return_attention)
+            v2, pooler_att2 = self._pooler(x2, batch=b2, return_attention=return_attention)
+            atts["pooler1"] = pooler_att1
+            atts["pooler2"] = pooler_att2
+        else:
+            v1 = self._pooler(x1, batch=b1, return_attention=return_attention)
+            v2 = self._pooler(x2, batch=b2, return_attention=return_attention)
         # Shape: (batch_size, _out_put_dim)
         out = torch.cat([v1, v2, v1-v2, v1*v2], dim=1)
-
-        return out
+        
+        if return_attention:
+            return out, atts
+        else:
+            return out

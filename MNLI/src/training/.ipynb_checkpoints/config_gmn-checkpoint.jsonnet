@@ -1,22 +1,18 @@
-//the file path should be relative to the path that call `allennlp train`
 //usage:
 //@MNLI
 // `allennlp train "./src/training/config_gmn.jsonnet" -s "./param/GMN_BERT_300d_MNLI"   --include-package "src" --force`
 //usage2: `allennlp find-lr ./src/training/config_gmn.jsonnet --include-package "src" -s ./find_lr --start-lr 0.00001 --end-lr 0.01 --num-batches 50 --force`
 
-
 local test = false;
-local use_mnli = true; //anli bug
 local gpu = 0; //use cuda:0
 //local gpu = null; //test with cpu
 
 local max_instances = if test then 100 else null;
-//local max_instances = 100;
 
 //data, dirs
 local data_root = "/work/2020-IIS-NLU-internship/MNLI/data";
-local train_data_path = data_root + if use_mnli then "/MNLI_Stanza/pre_multinli_1.0_train.jsonl" else "/anli_v1.0_preprocessed/R1/train.jsonl" ;
-local validation_data_path = data_root + if use_mnli then "/MNLI_Stanza/pre_multinli_1.0_dev_matched.jsonl" else "/anli_v1.0_preprocessed/R1/dev.jsonl";
+local train_data_path = data_root + "/hans_preprocessed/train.jsonl";
+local validation_data_path = data_root + "/hans_preprocessed/dev.jsonl";
 local cache_data_dir = null;
 local input_fields = ["sentence1", "sentence2", "gold_label"];
 
@@ -32,7 +28,7 @@ local num_edge_labels = 20;
 
 //training
 local BATCH_SIZE = 16;
-local EPOCH = if test then 2 else 50;
+local EPOCH = if test then 2 else 20;
 local LR = 0.0001;
 local WD = 0.1; //L2 norm
 local patience = null; 
@@ -98,12 +94,12 @@ local use_amp = false; //no scatter for Half
             "type": "graph_matching_net",
             "num_layers": 3,
             "convs": {
-                "type": "rgcn",
+                "type": "gat",
                 "in_channels": dim_encoder,
                 "out_channels": dim_encoder,
-                "num_relations": num_edge_labels,
-                "root_weight": false,
-                "bias": false,
+                //"num_relations": num_edge_labels,
+                //"root_weight": false,
+                //"bias": false,
             },
             "atts": {
                 "type": "bimpm",

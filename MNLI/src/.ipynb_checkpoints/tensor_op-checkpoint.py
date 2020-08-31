@@ -7,7 +7,7 @@ def sorted_dynamic_parition(x: torch.Tensor, b: torch.Tensor) -> List[torch.Tens
     N = b[-1] + 1
     res = []
     for i in range(N):
-        res += [x[(partitions == i).nonzero().squeeze(1)]]
+        res += [x[(b == i).nonzero(as_tuple=False).squeeze(1)]]
     return res
 
 def dense2sparse(data: torch.Tensor, mask: torch.Tensor) -> Dict[str, torch.Tensor]:

@@ -3,6 +3,7 @@ from pytorch geometric ``
 original paper is ``
 modification = 
 1. get_input/output_dim
+2. do not pass init **kwargs (or will be fed **extra)
 """
 
 from typing import Optional, Union, Tuple
@@ -98,7 +99,7 @@ class RGCNConv(MessagePassing):
                  num_blocks: Optional[int] = None,
                  aggr: str = 'mean',
                  root_weight: bool = True,
-                 bias: bool = True, **kwargs):  # yapf: disable
+                 bias: bool = True):  # yapf: disable
 
         super(RGCNConv, self).__init__(aggr=aggr, node_dim=0) # UPDATE: do not use **kwargs here
 

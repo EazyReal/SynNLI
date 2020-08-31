@@ -8,6 +8,7 @@ from allennlp.common import Registrable
 
 from .RGCNConv import RGCNConv
 from .HGTConv import HGTConv
+from .GATConv import GATConv
 
 """
 An `Graph2GraphEncoder` is known as `GraphConvolutionLayer`
@@ -20,6 +21,9 @@ The available options are
 * ["rgcn"](link_to_rgcn)
 """
 
+"""
+https://github.com/allenai/allennlp/blob/master/allennlp/modules/seq2seq_encoders/pytorch_seq2seq_wrapper.py
+"""
 
 class Graph2GraphEncoder(torch.nn.Module, Registrable):
     """
@@ -39,41 +43,21 @@ class Graph2GraphEncoder(torch.nn.Module, Registrable):
         Returns the dimension of the vector input for each element in the sequence input
         to a `Seq2VecEncoder`.
         """
-        return self.in_channels
+        raise NotImplementedError
         
     def get_output_dim(self) -> int: # not used
         """
         Returns the dimension of the final vector output by this `Seq2VecEncoder`.  This is `not`
         the shape of the returned tensor, but the last element of that shape.
         """
-        return self.out_channels
-        #raise NotImplementedError
-
-
-class _Graph2GraphEncoderLambda(torch.nn.Module):
-    """
-    Wrapper around non PyTorch, lambda based Graph2GraphEncoders
-    to display them as modules whenever printing model.
-    """
-
-    def __init__(self, func: Callable[[torch.Tensor], torch.Tensor], name: str):
-        super().__init__()
-        self._name = name
-        self._func = func
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self._func(x)
-
-    @overrides
-    def _get_name(self):
-        return self._name
+        raise NotImplementedError
 
 
 # There are no classes to decorate, so we hack these into Registrable._registry.
 # If you want to instantiate it, you can do like this:
 # <T:Registrable>.by_name('relu')()
 Registrable._registry[Graph2GraphEncoder] = {
-    "gat": (torch_geometric.nn.conv.GATConv, None),
+    "gat": (GATConv, None),
     #"rgcn": (torch_geometric.nn.conv.RGCNConv, None), 
     "rgcn": (RGCNConv, None),
     "hgt": (HGTConv, None),
