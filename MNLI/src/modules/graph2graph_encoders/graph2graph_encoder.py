@@ -9,6 +9,7 @@ from allennlp.common import Registrable
 from .RGCNConv import RGCNConv
 from .HGTConv import HGTConv
 from .GATConv import GATConv
+from .CGConv import CGConv
 
 """
 An `Graph2GraphEncoder` is known as `GraphConvolutionLayer`
@@ -61,5 +62,6 @@ Registrable._registry[Graph2GraphEncoder] = {
     #"rgcn": (torch_geometric.nn.conv.RGCNConv, None), 
     "rgcn": (RGCNConv, None),
     "hgt": (HGTConv, None),
+    "cg": (CGConv, None),
     # "linear": (lambda: _Graph2GraphEncoderLambda(lambda x: x, "Linear"), None),  # type: ignore
 }
