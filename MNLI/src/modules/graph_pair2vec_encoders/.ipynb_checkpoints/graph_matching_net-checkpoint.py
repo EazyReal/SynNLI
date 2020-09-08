@@ -13,7 +13,7 @@ from src.modules.node_updaters import NodeUpdater
 
 from src.modules.graph_pair2vec_encoders.graph_pair2vec_encoder import GraphPair2VecEncoder 
 
-@GraphPair2VecEncoder.register("graph_matching_net")
+@GraphPair2VecEncoder.register("graph_matching_net", exist_ok=True)
 class GraphMatchingNet(GraphPair2VecEncoder):
     """
     `GraphMatchingNet` differs from `GraphEmbeddingNet` with an extra cross graph attention.
@@ -32,8 +32,8 @@ class GraphMatchingNet(GraphPair2VecEncoder):
         num_layers: int,
         convs: Graph2GraphEncoder, 
         atts: GraphPair2GraphPairEncoder,
-        updater: NodeUpdater,  
-        pooler: Graph2VecEncoder, 
+        updaters: List[NodeUpdater],  
+        poolers: List[Graph2VecEncoder], 
     ) -> None:
         """
         `GraphMatchingNet` constructor
@@ -57,10 +57,10 @@ class GraphMatchingNet(GraphPair2VecEncoder):
             
         self._convs = torch.nn.ModuleList(convs)
         self._atts = torch.nn.ModuleList(atts)
-        self._updater = updater
+        self._updaters = torch.nn.ModuleList(updaters)
         self._output_dim = 4*convs[-1].get_output_dim() # for vector pair comparison 
         self._input_dim = convs[0].get_input_dim()
-        self._pooler = pooler
+        self._poolers = torch.nn.ModuleList(poolers)
         self.num_layers = num_layers
     
     @overrides
@@ -110,18 +110,18 @@ class GraphMatchingNet(GraphPair2VecEncoder):
             # calculate matching (n_nodes, dim_matching)
             x1_match, x2_match = self._atts[i](x1, x2, b1, b2)
             # update (n_nodes, dim_encoder)
-            x1 = self._updater([x1_msg, x1_match], x1)
-            x2 = self._updater([x2_msg, x2_match], x2)
+            x1 = self._updaters[0]([x1_msg, x1_match], x1)
+            x2 = self._updaters[1]([x2_msg, x2_match], x2)
         
         # Graph Pooling => (batch_size, _input_dim)
         if return_attention:
-            v1, pooler_att1 = self._pooler(x1, batch=b1, return_attention=return_attention)
-            v2, pooler_att2 = self._pooler(x2, batch=b2, return_attention=return_attention)
+            v1, pooler_att1 = self._poolers[0](x1, batch=b1, return_attention=return_attention)
+            v2, pooler_att2 = self._poolers[1](x2, batch=b2, return_attention=return_attention)
             atts["pooler1"] = pooler_att1
             atts["pooler2"] = pooler_att2
         else:
-            v1 = self._pooler(x1, batch=b1, return_attention=return_attention)
-            v2 = self._pooler(x2, batch=b2, return_attention=return_attention)
+            v1 = self._poolers[0](x1, batch=b1, return_attention=return_attention)
+            v2 = self._poolers[1](x2, batch=b2, return_attention=return_attention)
         # Shape: (batch_size, _out_put_dim)
         out = torch.cat([v1, v2, v1-v2, v1*v2], dim=1)
         

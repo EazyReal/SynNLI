@@ -6,6 +6,7 @@ can use Passthrough provided in allennlp if not required
 # external
 import json
 from typing import Dict, Iterable, List
+from copy import deepcopy
 
 # allennlp
 import numpy as np
@@ -92,14 +93,17 @@ class GraphNLIModel(Model):
         """
         # Shape: (batch_size, num_tokens, embedding_dim)
         # embedder will take out the desired entry, for ex: ["tokens"]
-        embedded_p = self.embedder(**tokens_p) 
-        embedded_h = self.embedder(**tokens_h)
+        embedded_p = self.embedder(tokens_p) 
+        embedded_h = self.embedder(tokens_h)
         # Shape: (num_batch_edges, edge_embedding_dim)
         # can use pass through if type is the information required
         # this is general for any kind of edge representation to GP2Vencoder
         # https://docs.allennlp.org/master/api/modules/token_embedders/embedding/
-        g_p["edge_attr"] = self.edge_embedder(g_p["edge_attr"])
-        g_h["edge_attr"] = self.edge_embedder(g_h["edge_attr"])
+        # inplace will change input!!!
+        g_p_embedded = deepcopy(g_p)
+        g_h_embedded = deepcopy(g_h)
+        g_p_embedded["edge_attr"] = self.edge_embedder(g_p["edge_attr"])
+        g_h_embedded["edge_attr"] = self.edge_embedder(g_h["edge_attr"])
         assert(not torch.any(torch.isnan(embedded_p)))
         assert(not torch.any(torch.isnan(embedded_h)))
         # Shape: (batch_size, num_tokens, projected_dim)
@@ -116,9 +120,17 @@ class GraphNLIModel(Model):
         assert(not torch.any(torch.isnan(sparse_h["data"])))
         # Shape: (batch_size, classifier_in_dim)
         if return_attention:
-            cls_vector, attention_dict = self.encoder(sparse_p, sparse_h, g_p, g_h, return_attention=return_attention)
+            cls_vector, attention_dict = self.encoder(sparse_p,
+                                                      sparse_h,
+                                                      g_p_embedded,
+                                                      g_h_embedded,
+                                                      return_attention=return_attention)
         else:
-            cls_vector = self.encoder(sparse_p, sparse_h, g_p, g_h, return_attention=return_attention)
+            cls_vector = self.encoder(sparse_p,
+                                      sparse_h,
+                                      g_p_embedded,
+                                      g_h_embedded,
+                                      return_attention=return_attention)
         # Shape: (batch_size, num_labels)
         logits = self.classifier(cls_vector)
         assert(not torch.any(torch.isnan(cls_vector)))

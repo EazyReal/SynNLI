@@ -106,7 +106,7 @@ class NLIGraphReader(DatasetReader):
         #super().__init__(manual_distributed_sharding=True, **kwargs)
         super(NLIGraphReader, self).__init__(**kwargs)
         self._wordpiece_tokenizer = wordpiece_tokenizer or PretrainedTransformerTokenizer(config.TRANSFORMER_NAME)
-        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerMismatchedIndexer(config.TRANSFORMER_NAME)}
+        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerMismatchedIndexer(config.TRANSFORMER_NAME)} # todo, add pos if use gated match
         self._combine_input_fields = combine_input_fields or False
         self._input_parsed = input_parsed if (input_parsed is not None) else True 
         self._parser = parser or None
@@ -176,8 +176,16 @@ class NLIGraphReader(DatasetReader):
             hypothesis : StanzaDoc = self._parser(hypothesis)
         g_p: PyGeoData = utils.doc2graph(premise)
         g_h: PyGeoData = utils.doc2graph(hypothesis)
-        tokens_p: List[Token] = [Token(w) for w in  g_p.node_attr]
-        tokens_h: List[Token] = [Token(w) for w in  g_h.node_attr]  
+        def stanza_word2allennlp_token(w):
+            t = Token(
+                text = w.text,
+                lemma_ = w.lemma,
+                pos_ = w.pos,
+                dep_ =  w.deprel,
+            )
+            return t 
+        tokens_p: List[Token] = [stanza_word2allennlp_token(w) for w in  g_p.node_attr]
+        tokens_h: List[Token] = [stanza_word2allennlp_token(w) for w in  g_h.node_attr]
             
         if self._combine_input_fields:
             # see the doc, the output should be indexed

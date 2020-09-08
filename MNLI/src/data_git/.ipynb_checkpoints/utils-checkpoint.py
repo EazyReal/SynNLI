@@ -107,19 +107,18 @@ def doc2graph(doc : Union[StanzaDocument, List]) -> PytorchGeoData:
          x: id tensor
          edge_idx : edges size = (2, l-1)
          edge_attr: (u, v, edge_type in str)
-         node_attr: text, with extra special tokens
+         node_attr: list of StanzaWords
         }
+    Note that in Stanza, token is a list of words
     """
     if isinstance(doc, list): #convert to Doc first if is in dict form ([[dict]])
         doc = StanzaDocument(doc)
     # add root token for each sentences
-    n = doc.num_tokens+len(doc.sentences)
+    n = doc.num_words
     e = [[],[]]
     edge_info = []
     node_info = []
     prev_token_sum = 0
-    prev_root_id = 0
-    cur_root_id = 0
     # add edge function:
     def add_edge(id1, id2, type_, bidirectional=True):
         """
@@ -136,25 +135,24 @@ def doc2graph(doc : Union[StanzaDocument, List]) -> PytorchGeoData:
     # get original dependency
     for idx, sent in enumerate(doc.sentences):
         # node info by index(add root at the beginning of every sentence)
-        cur_root_id = len(node_info)
-        node_info.append(root_token)
-        for token in sent.tokens:
-            node_info.append(token.to_dict()[0]['text'])
+        node_info.extend(sent.words)
         # edge info by index of u in edge (u,v)
         for dep in sent.dependencies:
-            id1 = prev_token_sum + int(dep[0].to_dict()["id"])
-            id2 = prev_token_sum + int(dep[2].to_dict()["id"])
-            add_edge(id1, id2, dep[1])
-        prev_token_sum += len(sent.tokens)+1
-        # add links between sentence roots
-        if(cur_root_id != 0):
-            id1 = prev_root_id
-            id2 = cur_root_id
-            add_edge(id1, id2, "bridge")
-        prev_root_id = cur_root_id
+            if dep[1] != "root":
+                id1 = prev_token_sum + int(dep[0].id)-1
+                id2 = prev_token_sum + int(dep[2].id)-1
+                add_edge(id1, id2, dep[1])
+        prev_token_sum += len(sent.words)
+        # sent.print_dependencies()
+        # sent.print_words()
+    # add constituent edges
+    for i in range(n-1):
+        add_edge(i, i+1, "const:next", bidirectional=False)
+        add_edge(i+1, i, "const:prev", bidirectional=False)
     # done building edges and nodes
+    # print(n, e, edge_info, node_info, sep='\n')
     x = torch.tensor(list(range(n)))
-    e = torch.tensor(e)
+    e = torch.LongTensor(e) # use longtensor explicitly so that Data can init without type issue
     G = PytorchGeoData(x=x, edge_index=e, edge_attr=edge_info, node_attr=node_info)
     return G
 
@@ -191,3 +189,52 @@ def doc2graph_allennlp(doc: Dict) -> PytorchGeoData:
     e = torch.tensor(e)
     G =PytorchGeoData(x=x, edge_index=e, edge_attr=edge_attr, node_attr=node_attr)
     return G
+
+
+"""
+# root version doc2graph
+def doc2graph(doc : Union[StanzaDocument, List]) -> PytorchGeoData:
+    if isinstance(doc, list): #convert to Doc first if is in dict form ([[dict]])
+        doc = StanzaDocument(doc)
+    # add root token for each sentences
+    n = doc.num_tokens+len(doc.sentences)
+    e = [[],[]]
+    edge_info = []
+    node_info = []
+    prev_token_sum = 0
+    prev_root_id = 0
+    cur_root_id = 0
+    # add edge function:
+    def add_edge(id1, id2, type_, bidirectional=True):
+        e[0].append(id1)
+        e[1].append(id2)
+        edge_info.append(type_)
+        if bidirectional:
+            e[0].append(id2)
+            e[1].append(id1)
+            edge_info.append("reverse:"+type_)
+    # get original dependency
+    for idx, sent in enumerate(doc.sentences):
+        # node info by index(add root at the beginning of every sentence)
+        cur_root_id = len(node_info)
+        node_info.append(root_token)
+        for token in sent.tokens:
+            node_info.append(token.to_dict()[0]['text'])
+        # edge info by index of u in edge (u,v)
+        for dep in sent.dependencies:
+            id1 = prev_token_sum + int(dep[0].to_dict()["id"]) # here no need to -1 because of first root
+            id2 = prev_token_sum + int(dep[2].to_dict()["id"])
+            add_edge(id1, id2, dep[1])
+        prev_token_sum += len(sent.tokens)+1
+        # add links between sentence roots
+        if(cur_root_id != 0):
+            id1 = prev_root_id
+            id2 = cur_root_id
+            add_edge(id1, id2, "bridge")
+        prev_root_id = cur_root_id
+    # done building edges and nodes
+    x = torch.tensor(list(range(n)))
+    e = torch.tensor(e)
+    G = PytorchGeoData(x=x, edge_index=e, edge_attr=edge_info, node_attr=node_info)
+    return G
+"""
