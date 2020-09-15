@@ -47,11 +47,13 @@ class AttentiveSumDiff(GraphPair2GraphPairEncoder):
         # return all nodes
         r1 = []
         r2 = []
+        Ss = []
         # for each instance in batch
         for i in range(N):
             bx1 = xs1[i] # n*d
             bx2 = xs2[i] # m*d
             S = self._att(bx1.unsqueeze(0), bx2.unsqueeze(0)).squeeze(0) # n*m similarity matrix
+            Ss += [S.detach().T]
             r1 += [torch.mm(S, bx2)] # n*m, m*d => n*d, content is from bx2
             r2 += [torch.mm(S.T, bx1)] # m*n, n*d => m*d, content is from bx1
         # concat to make sparse batch
@@ -62,7 +64,7 @@ class AttentiveSumDiff(GraphPair2GraphPairEncoder):
         d2 = x2-r2
         # return attention if required, TODO
         if return_attention is True:
-            return d1, d2
+            return d1, d2, Ss
         else:
             return d1, d2
     

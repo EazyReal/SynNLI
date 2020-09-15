@@ -34,6 +34,7 @@ from stanza.pipeline.core import Pipeline as StanzaPipeline
 
 logger = logging.getLogger(__name__)
 
+default_fields = ["sentence1", "sentence2", "gold_label"]
 
 """
 Caveat:
@@ -105,12 +106,12 @@ class NLIGraphReader(DatasetReader):
     ) -> None:
         #super().__init__(manual_distributed_sharding=True, **kwargs)
         super(NLIGraphReader, self).__init__(**kwargs)
-        self._wordpiece_tokenizer = wordpiece_tokenizer or PretrainedTransformerTokenizer(config.TRANSFORMER_NAME)
-        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerMismatchedIndexer(config.TRANSFORMER_NAME)} # todo, add pos if use gated match
+        self._wordpiece_tokenizer = wordpiece_tokenizer # used when want to combine input field if use bert
+        self._token_indexers = token_indexers 
         self._combine_input_fields = combine_input_fields or False
         self._input_parsed = input_parsed if (input_parsed is not None) else True 
         self._parser = parser or None
-        self.f = input_fields or config.default_fields
+        self.f = input_fields or default_fields #remove dependency to config
 
     @overrides
     def _read(self, file_path: str):
@@ -122,9 +123,6 @@ class NLIGraphReader(DatasetReader):
         """
         file_path = cached_path(file_path)
         with open(file_path, "r") as fo:
-            # for knowing len in the beginning
-            # lines = fo.readlines()
-            # logger.info(msg=len(lines))
             example_iter = (json.loads(line) for line in fo.readlines())
             # we need gold label
             filtered_example_iter = (
@@ -189,6 +187,7 @@ class NLIGraphReader(DatasetReader):
             
         if self._combine_input_fields:
             # see the doc, the output should be indexed
+            raise NotImplementedError
             tokens = self._wordpiece_tokenizer.add_special_tokens(tokens_p, tokens_h)
             fields["tokens"] = TextField(tokens, self._token_indexers)
         else:

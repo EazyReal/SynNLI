@@ -1,5 +1,6 @@
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Union
+from pathlib import Path
 
 from allennlp.data import Batch, Instance, DatasetReader
 from allennlp.common import Registrable
@@ -40,7 +41,7 @@ class AttentionVisualizer(Registrable):
         return
     
     # visualize a json dictionary
-    def visualize_json(self, json_dict: Dict[str, Any]):
+    def visualize_json(self, json_dict: Dict[str, Any], serialization_dir: Union[str, Path]=None):
         """
         require reader with nlp
         """
@@ -49,11 +50,11 @@ class AttentionVisualizer(Registrable):
             hypothesis = json_dict["sentence2"],
             gold_label = json_dict["gold_label"] if "gold_label" in json_dict.keys() else None,
         )
-        self.visualize_instance(instance)
+        self.visualize_instance(instance, serialization_dir)
         return
         
     # visualize an instance
-    def visualize_instance(self, instance: Instance):
+    def visualize_instance(self, instance: Instance, serialization_dir: Union[str, Path]=None):
         """
         main function of this visualizer
         usage: take an instance and visualize it
@@ -82,9 +83,20 @@ class AttentionVisualizer(Registrable):
         logger.info(f"the predicted label is {ret['predicted_label']}")
         logger.info(f"the gold label is {gold_label}")
         # hope to show_sequence_attention(strlist, att, msg=None)
-        show_sequence_attention(tokens_p, pooler_p)
-        show_sequence_attention(tokens_h, pooler_h)
-        return
+        if serialization_dir is not None:
+            show_sequence_attention(tokens_p, pooler_p, serialization_dir + "pooler_p.png")
+            show_sequence_attention(tokens_h, pooler_h, serialization_dir + "pooler_h.png")
+            num_layers = 3
+            for i in range(num_layers):
+                logger.info(f"matrix attention at layer {i}")
+                show_matrix_attention(tokens_p, tokens_h, ret["attentions"][f"matching{i}"][0], serialization_dir + f"matching{i}.png")
+        else:
+            show_sequence_attention(tokens_p, pooler_p)
+            show_sequence_attention(tokens_h, pooler_h)
+            num_layers = 3
+            for i in range(num_layers):
+                logger.info(f"matrix attention at layer {i}")
+                show_matrix_attention(tokens_p, tokens_h, ret["attentions"][f"matching{i}"][0])
             
     
     def visualize_batch_and_save():

@@ -1,10 +1,11 @@
 from typing import Union, Dict, List
+from pathlib import Path
 
 import torch 
 import numpy as np
 import matplotlib.pyplot as plt
 
-def show_sequence_attention(seq: List[str], att: Union[torch.Tensor, np.array]) -> None:
+def show_sequence_attention(seq: List[str], att: Union[torch.Tensor, np.array], serialization_dir: Union[str, Path]=None) -> None:
     """
     attention visualization
     seq is List[List[Token]]
@@ -30,9 +31,11 @@ def show_sequence_attention(seq: List[str], att: Union[torch.Tensor, np.array]) 
     #ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
     ax.set_title("Attention")
     fig.tight_layout()
+    if serialization_dir is not None:
+        plt.savefig(serialization_dir)
     plt.show()
     
-def show_matrix_attention(seq1: List[str], seq2: List[str], att: Union[torch.Tensor, np.array])->None:
+def show_matrix_attention(seq1: List[str], seq2: List[str], att: Union[torch.Tensor, np.array], serialization_dir: Union[str, Path]=None)->None:
     """
     attention visualization
     seq1/seq2 is List[Token]
@@ -56,4 +59,6 @@ def show_matrix_attention(seq1: List[str], seq2: List[str], att: Union[torch.Ten
     #ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
     ax.set_title("Attention")
     fig.tight_layout()
+    if serialization_dir is not None:
+        plt.savefig(serialization_dir)
     plt.show()

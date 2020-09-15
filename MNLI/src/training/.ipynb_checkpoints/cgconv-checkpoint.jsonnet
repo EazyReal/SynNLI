@@ -2,6 +2,7 @@
 //@MNLI
 // `allennlp train "./src/training/cgconv.jsonnet" -s "./param/GMN_CG_AD_300d_MNLI"   --include-package "src" --force`
 //usage2: `allennlp find-lr ./src/training/cgconv.jsonnet --include-package "src" -s ./find_lr --start-lr 0.00001 --end-lr 0.01 --num-batches 50 --force`
+//usage evaluate: `allennlp evaluate ./param/GMN_CG_AD_300d_MNLI/model.tar.gz ./data/hans_preprocessed/dev.jsonl --output-file ./evaluation_results/CG_AD_on_HANS.txt --batch-size 16 --cuda-device 0 --include-package src`
 
 local test = false;
 local gpu = 0; //use cuda:0

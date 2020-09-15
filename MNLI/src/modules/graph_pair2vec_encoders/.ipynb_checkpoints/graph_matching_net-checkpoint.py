@@ -108,7 +108,11 @@ class GraphMatchingNet(GraphPair2VecEncoder):
                 x1_msg = self._convs[i](x=x1, edge_index=e1, edge_type=t1)
                 x2_msg = self._convs[i](x=x2, edge_index=e2, edge_type=t2)
             # calculate matching (n_nodes, dim_matching)
-            x1_match, x2_match = self._atts[i](x1, x2, b1, b2)
+            if return_attention:
+                x1_match, x2_match, matching_attention = self._atts[i](x1, x2, b1, b2, return_attention)
+                atts[f"matching{i}"] = matching_attention
+            else:
+                x1_match, x2_match = self._atts[i](x1, x2, b1, b2)
             # update (n_nodes, dim_encoder)
             x1 = self._updaters[0]([x1_msg, x1_match], x1)
             x2 = self._updaters[1]([x2_msg, x2_match], x2)

@@ -10,7 +10,7 @@ from src.tensor_op import sorted_dynamic_parition, dense2sparse, sparse2dense
 from .graph_pair2graph_pair_encoder import GraphPair2GraphPairEncoder
 
 
-@GraphPair2GraphPairEncoder.register("bimpm")
+@GraphPair2GraphPairEncoder.register("bimpm", exist_ok=True)
 class GraphPairMPM(GraphPair2GraphPairEncoder):
     """
     BiMPM for Sparse Batch By Dense, Sparse Convertion
@@ -26,10 +26,11 @@ class GraphPairMPM(GraphPair2GraphPairEncoder):
         return self._dim_match
     
     def forward(self,
-           x1: torch.Tensor,
-           x2: torch.Tensor,
-           b1: torch.Tensor,
-           b2: torch.Tensor) -> Tuple[torch.Tensor]:
+                x1: torch.Tensor,x2: torch.Tensor,
+                b1: torch.Tensor,
+                b2: torch.Tensor,
+                return_attention: bool = False,
+    ) -> Tuple[torch.Tensor]:
         x1 = sparse2dense(x1, b1)
         x2 = sparse2dense(x2, b2)
         x1, m1 = x1["data"], x1["mask"]
@@ -41,7 +42,10 @@ class GraphPairMPM(GraphPair2GraphPairEncoder):
         # can try use attentive max + attentive only
         x1 = dense2sparse(x1, m1)
         x2 = dense2sparse(x2, m2)
-        return x1["data"], x2["data"]
+        if return_attention:
+            return x1["data"], x2["data"], None
+        else:
+            return x1["data"], x2["data"]
     
     def __repr__(self):
         return f"({str(self._bimpm)}, dim_matching_output={str(self._dim_match)})"

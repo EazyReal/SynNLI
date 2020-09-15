@@ -114,7 +114,7 @@ class GraphNLIModel(Model):
         # Shape:
         # node_attr : (num_tokens, embedding_dim)
         # batch_id : (num_tokens)
-        sparse_p = tensor_op.dense2sparse(embedded_p, tokens_p["tokens"]["mask"])
+        sparse_p = tensor_op.dense2sparse(embedded_p, tokens_p["tokens"]["mask"]) #need to overload indexer for this
         sparse_h = tensor_op.dense2sparse(embedded_h, tokens_h["tokens"]["mask"])
         assert(not torch.any(torch.isnan(sparse_p["data"])))
         assert(not torch.any(torch.isnan(sparse_h["data"])))

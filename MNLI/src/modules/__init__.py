@@ -14,3 +14,5 @@ from src.modules.node_updaters import (
 from src.modules.graph_pair2graph_pair_encoders import (
     GraphPair2GraphPairEncoder,
 )
+
+from .elmo_token_embedder_with_mask import ElmoTokenEmbedderWithMask
