@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="graph-nli-ytlin", # Replace with your own username
+    name="syn_nli", # Replace with your own username
     version="0.0.1",
     author="ytlin",
     author_email="0312fs3@gmail.com",
@@ -32,6 +32,7 @@ setup(
             "test_fixtures.*",
             "benchmarks",
             "benchmarks.*",
+            "previous_srcs"
         ]
     ),
     install_requires=[
