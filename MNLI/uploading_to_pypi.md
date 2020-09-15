@@ -2,6 +2,9 @@
 
 ## reference
 - https://packaging.python.org/tutorials/packaging-projects/
+- https://packaging.python.org/guides/migrating-to-pypi-org/
+- https://packaging.python.org/guides/distributing-packages-using-setuptools/#version
+- https://packaging.python.org/tutorials/creating-documentation/
 
 ## algorithm
 - create `setup.py`, `REANDME.md`, `license.txt`, `test`, etc.
