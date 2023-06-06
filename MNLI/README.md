@@ -2,10 +2,7 @@
 
 ## Description
 - this repo uses allennlp as base repo
-
-## AllenNlp
-- a quick guide of mine can be found at the same folder
-- for insight, please visit allennlp document and github
+- see `allen_nlp_guide.md` for traning and running
 
 ## Custom Classes and Operations
 - `GraphPair2VecEncoder`

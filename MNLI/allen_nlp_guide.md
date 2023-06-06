@@ -1,31 +1,20 @@
 ---
-title: "README.md for SynNLI repo, presentation version"
 descroption: "also presentation for NLU lab biweely meeting"
 author: "yt lin"
 license: "apache"
 ---
 
 
-## Modularized Model with AllenNLP
+# Modularized Model with AllenNLP
 
 ---
 
 ## Overview
 <!-- .slide: style="font-size: 25px;" -->
-- The repo can be viewed as an extention to allennlp Supporting Some Graph Neural Net Modules
-- Main work for the past 16 days (8/9-8/25)
-- Will opensource after composition
-
----
-
-## AllenNLP
-![](https://i.imgur.com/Uk7vohy.png)
-- Abstraction between Layers
-- Dependency Injection to Do experiments
-
-----
-
-### Experiements are easy with AllenNLP
+- The repo can be viewed as an extention to Allennlp to support some graph NN modules
+- Why?
+  - abstraction between layers
+  - dependency injection to do experiments
 
 ![](https://i.imgur.com/QtS2DLJ.png)
 
@@ -33,7 +22,6 @@ license: "apache"
 
 ### Example (config.jsonnet)
 ![](https://i.imgur.com/yZCApK1.png)
-
 
 ----
 

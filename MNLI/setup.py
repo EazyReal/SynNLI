@@ -8,18 +8,18 @@ listed_requires = [
     # torch
     "torch==1.6.0", #+cu101 is broken
     "torchvision==0.7.0", #+cu101
+     # torch geometric related
+    "torch_geometric==1.6.0",
+    "torch_scatter==2.0.5",
+    "torch_sparse==0.6.7",
     # allennlp, should have a lot of dependencies intalled
     "allennlp==1.1.0rc3",
     "allennlp-models==1.1.0rc3",
     # transformers
     "transformers==3.0.2",
-    # torch geometric related
-    "torch-geometric==1.6.0",
-    "torch-scatter==2.0.5",
-    "torch-sparse==0.6.7",
     # utils,typing
-    "tqdm==4.46.0",
-    "typing==3.7.4.3",
+    "tqdm",
+    "typing",
     "pathlib",
 ]   
     
