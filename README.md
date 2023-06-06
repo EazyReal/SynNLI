@@ -1,4 +1,4 @@
-# SynNLI 
+# SynNLI - Syntax-aware Natural Language Inference
 
 ## Description
 - this repo uses allennlp as base repo
@@ -35,7 +35,7 @@
     - can be found in `src/training`
     - for allennlp train
 
-## Usage (Cur)
+## Usage (2020)
 - ./install_dependencies.sh 
 - download NLI style data set to data
     - and specify path in jsonnet
@@ -43,6 +43,8 @@
     - and specify path in jsonnet
 - train model (see Training Area)
     - with jsonnet
+- in 2023, this will not work properly (see `2023install.md`)
+
 
 ## Parse Data with Stanza
 - Stanza will be loaded in preprocess.py
