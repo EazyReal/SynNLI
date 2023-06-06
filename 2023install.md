@@ -1,4 +1,4 @@
-# 2023 tried install methods (all failed)
+# 2023 failed install methods
 
 ## M1 Macbook Max
 - pyenv => miniforge3
