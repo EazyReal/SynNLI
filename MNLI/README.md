@@ -2,7 +2,7 @@
 
 ## Description
 - this repo uses allennlp as base repo
-- see `allen_nlp_guide.md` for traning and running
+- see `README_allen_nlp_guide.md` for traning and running
 
 ## Custom Classes and Operations
 - `GraphPair2VecEncoder`
@@ -38,7 +38,7 @@
 ## Usage (Cur)
 - ./install_dependencies.sh 
 - download NLI style data set to data
-    - and specify path in jsonne
+    - and specify path in jsonnet
 - parse data (see Parse Data section)
     - and specify path in jsonnet
 - train model (see Training Area)

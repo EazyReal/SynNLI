@@ -1,3 +1,0 @@
-[console_scripts]
-src = src.__main__:run
-

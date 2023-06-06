@@ -1,1 +1,0 @@
-from .syn_nli_model import SynNLIModel

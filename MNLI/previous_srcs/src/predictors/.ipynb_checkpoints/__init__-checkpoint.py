@@ -1,1 +1,0 @@
-from .graph_nli_predictor import GraphNLIPredictor
