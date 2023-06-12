@@ -15,6 +15,11 @@ pip install torch-cluster==latest+${CUDA} -f https://pytorch-geometric.com/whl/t
 pip install torch-spline-conv==latest+${CUDA} -f https://pytorch-geometric.com/whl/torch-${TORCH}.html
 pip install torch-geometric
 
+pip install torch-scatter
+pip install torch-sparse
+pip install torch-cluster
+pip install torch-spline-conv
+
 # pytorch related
 pip install torch==${TORCH}+${CUDA} torchvision==${TORCH_VISION}+${CUDA} -f https://download.pytorch.org/whl/torch_stable.html
 
